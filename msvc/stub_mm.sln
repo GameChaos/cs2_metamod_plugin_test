@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32802.440
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stub_mm", "stub_mm.vcxproj", "{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug - Alien Swarm|x64 = Debug - Alien Swarm|x64
+		Debug - CS2|x64 = Debug - CS2|x64
+		Debug - Dark Messiah|x64 = Debug - Dark Messiah|x64
+		Debug - Left 4 Dead 2|x64 = Debug - Left 4 Dead 2|x64
+		Debug - Left 4 Dead|x64 = Debug - Left 4 Dead|x64
+		Debug - Orange Box Valve|x64 = Debug - Orange Box Valve|x64
+		Debug - Orange Box|x64 = Debug - Orange Box|x64
+		Debug - Original|x64 = Debug - Original|x64
+		Release - Alien Swarm|x64 = Release - Alien Swarm|x64
+		Release - CS2|x64 = Release - CS2|x64
+		Release - Dark Messiah|x64 = Release - Dark Messiah|x64
+		Release - Left 4 Dead 2|x64 = Release - Left 4 Dead 2|x64
+		Release - Left 4 Dead|x64 = Release - Left 4 Dead|x64
+		Release - Orange Box Valve|x64 = Release - Orange Box Valve|x64
+		Release - Orange Box|x64 = Release - Orange Box|x64
+		Release - Original|x64 = Release - Original|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Alien Swarm|x64.ActiveCfg = Release - Bloody Good Time|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Alien Swarm|x64.Build.0 = Release - Bloody Good Time|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - CS2|x64.ActiveCfg = Debug - CS2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - CS2|x64.Build.0 = Debug - CS2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Dark Messiah|x64.ActiveCfg = Debug - Dark Messiah|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Dark Messiah|x64.Build.0 = Debug - Dark Messiah|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Left 4 Dead 2|x64.ActiveCfg = Debug - Left 4 Dead 2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Left 4 Dead 2|x64.Build.0 = Debug - Left 4 Dead 2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Left 4 Dead|x64.ActiveCfg = Debug - Left 4 Dead|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Left 4 Dead|x64.Build.0 = Debug - Left 4 Dead|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Orange Box Valve|x64.ActiveCfg = Debug - Orange Box Valve|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Orange Box Valve|x64.Build.0 = Debug - Orange Box Valve|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Orange Box|x64.ActiveCfg = Debug - Orange Box|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Orange Box|x64.Build.0 = Debug - Orange Box|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Original|x64.ActiveCfg = Debug - Original|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Debug - Original|x64.Build.0 = Debug - Original|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Alien Swarm|x64.ActiveCfg = Release - Alien Swarm|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Alien Swarm|x64.Build.0 = Release - Alien Swarm|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - CS2|x64.ActiveCfg = Release - CS2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - CS2|x64.Build.0 = Release - CS2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Dark Messiah|x64.ActiveCfg = Release - Dark Messiah|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Dark Messiah|x64.Build.0 = Release - Dark Messiah|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Left 4 Dead 2|x64.ActiveCfg = Release - Left 4 Dead 2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Left 4 Dead 2|x64.Build.0 = Release - Left 4 Dead 2|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Left 4 Dead|x64.ActiveCfg = Release - Left 4 Dead|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Left 4 Dead|x64.Build.0 = Release - Left 4 Dead|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Orange Box Valve|x64.ActiveCfg = Release - Orange Box Valve|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Orange Box Valve|x64.Build.0 = Release - Orange Box Valve|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Orange Box|x64.ActiveCfg = Release - Orange Box|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Orange Box|x64.Build.0 = Release - Orange Box|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Original|x64.ActiveCfg = Release - Original|x64
+		{EA8E7106-8D09-46A1-881B-FFBC4B8532F2}.Release - Original|x64.Build.0 = Release - Original|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C187058C-E20E-450E-B99D-8012D735D3A9}
+	EndGlobalSection
+EndGlobal
