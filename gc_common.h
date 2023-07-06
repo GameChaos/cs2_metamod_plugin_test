@@ -61,8 +61,8 @@ typedef double f64;
 #define ASSERT(expression)
 #endif
 
-#define MIN(a, b) ((a) > (b) ? (b) : (a))
-#define MAX(a, b) ((a) < (b) ? (b) : (a))
+// #define MIN(a, b) ((a) > (b) ? (b) : (a))
+// #define MAX(a, b) ((a) < (b) ? (b) : (a))
 #define ABS(a) ((a) < 0 ? -(a) : (a))
 #define CLAMP(min, val, max) (MAX(MIN(val, max), min))
 #define ROUND_UP_BY_POWER_OF_2(value, powerOf2) (((value) + (powerOf2) - 1) & ~((powerOf2) - 1))
@@ -72,7 +72,7 @@ typedef double f64;
 #define MERGE(a,b)  MERGE_(a, b)
 #define LABEL_(a) MERGE_(unique_name_, a)
 #define UNIQUE_NAME LABEL_(__LINE__)
-#define STRING(s) #s
+#define STRINGISE(s) #s
 
 #define MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
 
