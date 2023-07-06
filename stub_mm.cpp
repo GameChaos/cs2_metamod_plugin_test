@@ -16,12 +16,13 @@
 #define SOURCE_ENGINE 28
 
 #include <stdio.h>
-#include "stub_mm.h"
 
 #define SIGSCAN_IMPLEMENTATION
 #include "sigscan.h"
 
+#include "stub_mm.h"
 #include "gc_common.h"
+#include "cs2_datatypes.h"
 
 SH_DECL_HOOK3_void(ISource2Server, GameFrame, SH_NOATTRIB, false, bool, bool, bool);
 SH_DECL_HOOK1_void(ISource2GameClients, ClientFullyConnect, SH_NOATTRIB, false, CPlayerSlot);
@@ -40,7 +41,7 @@ float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ign
 
 uintptr_t FindPattern(void *start, size_t maxScanBytes, char *pattern, char *ignorePattern);
 
-typedef void *PlayerSlotToPlayerController_t(CPlayerSlot slot);
+typedef CBaseEntity *PlayerSlotToPlayerController_t(CPlayerSlot slot);
 PlayerSlotToPlayerController_t *PlayerSlotToPlayerController = NULL;
 
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
@@ -85,7 +86,7 @@ void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 
 void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
-	void *test = PlayerSlotToPlayerController(slot);
+	CBaseEntity *test = PlayerSlotToPlayerController(slot);
 	engine->ClientCommand(slot, "say poopee");
 	gpGlobals = engine->GetServerGlobals();
 	META_CONPRINTF("player slot: %i\n", slot.Get());
