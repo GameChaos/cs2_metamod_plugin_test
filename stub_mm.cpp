@@ -48,17 +48,22 @@ typedef CBaseEntity *PlayerSlotToPlayerController_t(CPlayerSlot slot);
 PlayerSlotToPlayerController_t *PlayerSlotToPlayerController = NULL;
 
 #define CBASEPLAYERPAWN_POSTTHINK(name) void name(CBaseEntity *this_)
-typedef CBASEPLAYERPAWN_POSTTHINK(CCSPlayerPawn_PostThink_t);
-CCSPlayerPawn_PostThink_t *CCSPlayerPawn_PostThink = NULL;
-subhook_t CCSPlayerPawn_PostThink_hook;
-CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPlayerPawn_PostThink);
+typedef CBASEPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
+CCSPP_PostThink_t *CCSPP_PostThink = NULL;
+subhook_t CCSPP_PostThink_hook;
+internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink);
 
 #define CCSP_MS__CHECKJUMPBUTTON(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv)
 typedef CCSP_MS__CHECKJUMPBUTTON(CCSP_MS__CheckJumpButton_t);
 CCSP_MS__CheckJumpButton_t *CCSP_MS__CheckJumpButton = NULL;
 subhook_t CCSP_MS__CheckJumpButton_hook;
-CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton);
+internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton);
 
+#define CCSP_MS__WALKMOVE(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv)
+typedef CCSP_MS__WALKMOVE(CCSP_MS__WalkMove_t);
+CCSP_MS__WalkMove_t *CCSP_MS__WalkMove = NULL;
+subhook_t CCSP_MS__WalkMove_hook;
+internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove);
 
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
@@ -76,40 +81,47 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	
 	// windows
 	char *serverbin = "../../csgo/bin/win64/server.dll";
-	
-	char *signature = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
-	char *mask = "xxxxxxxxx....xxxxx";
-	
-	PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan(serverbin, signature, mask, error, maxlen);
-	if (PlayerSlotToPlayerController == NULL)
 	{
-		return false;
+		char *sig = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
+		char *mask = "xxxxxxxxx....xxxxx";
+		if (!(PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
 	}
 	
-	char *CCSPlayerPawn_PostThink_sig = "\x48\x8B\xC4\x48\x89\x48\x08\x55\x53\x56\x57\x41\x54\x41\x56\x41";
-	char *CCSPlayerPawn_PostThink_mask = "xxxxxxxxxxxxxxxx";
-	CCSPlayerPawn_PostThink = (CCSPlayerPawn_PostThink_t *)SigScan(serverbin,
-		CCSPlayerPawn_PostThink_sig, CCSPlayerPawn_PostThink_mask, error, maxlen);
-	if (CCSPlayerPawn_PostThink == NULL)
 	{
-		return false;
+		char *sig = "\x48\x8B\xC4\x48\x89\x48\x08\x55\x53\x56\x57\x41\x54\x41\x56\x41";
+		char *mask = "xxxxxxxxxxxxxxxx";
+		if (!(CCSPP_PostThink = (CCSPP_PostThink_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		CCSPP_PostThink_hook = subhook_new((void *)CCSPP_PostThink, Hook_CCSPP_PostThink, SUBHOOK_64BIT_OFFSET);
+		subhook_install(CCSPP_PostThink_hook);
 	}
-	CCSPlayerPawn_PostThink_hook = subhook_new((void *)CCSPlayerPawn_PostThink,
-		Hook_CCSPlayerPawn_PostThink, SUBHOOK_64BIT_OFFSET);
-	subhook_install(CCSPlayerPawn_PostThink_hook);
 	
-	char *CCSP_MS__CheckJumpButton_sig = "\x48\x89\x5C\x24\x18\x56\x48\x83\xEC\x40\x48\x8B\xF2\x48";
-	char *CCSP_MS__CheckJumpButton_mask = "xxxxxxxxxxxxxx";
-	
-	CCSP_MS__CheckJumpButton = (CCSP_MS__CheckJumpButton_t *)SigScan(serverbin,
-		CCSP_MS__CheckJumpButton_sig, CCSP_MS__CheckJumpButton_mask, error, maxlen);
-	if (CCSP_MS__CheckJumpButton == NULL)
 	{
-		return false;
+		char *sig = "\x48\x89\x5C\x24\x18\x56\x48\x83\xEC\x40\x48\x8B\xF2\x48";
+		char *mask = "xxxxxxxxxxxxxx";
+		if (!(CCSP_MS__CheckJumpButton = (CCSP_MS__CheckJumpButton_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		CCSP_MS__CheckJumpButton_hook = subhook_new((void *)CCSP_MS__CheckJumpButton, Hook_CCSP_MS__CheckJumpButton, SUBHOOK_64BIT_OFFSET);
+		subhook_install(CCSP_MS__CheckJumpButton_hook);
 	}
-	CCSP_MS__CheckJumpButton_hook = subhook_new((void *)CCSP_MS__CheckJumpButton,
-		Hook_CCSP_MS__CheckJumpButton, SUBHOOK_64BIT_OFFSET);
-	subhook_install(CCSP_MS__CheckJumpButton_hook);
+	
+	{
+		char *sig = "\x48\x8B\xC4\x48\x89\x58\x18\x48\x89\x70\x20\x55\x57\x41\x54\x48\x8D";
+		char *mask = "xxxxxxxxxxxxxxxxx";
+		if (!(CCSP_MS__WalkMove = (CCSP_MS__WalkMove_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		CCSP_MS__WalkMove_hook = subhook_new((void *)CCSP_MS__WalkMove, Hook_CCSP_MS__WalkMove, SUBHOOK_64BIT_OFFSET);
+		subhook_install(CCSP_MS__WalkMove_hook);
+	}
 	
 	return true;
 }
@@ -120,38 +132,68 @@ bool StubPlugin::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK(ISource2GameClients, ClientFullyConnect, gameclients, SH_STATIC(Hook_ClientFullyConnect), false);
 	SH_REMOVE_HOOK(ISource2GameClients, ProcessUsercmds, gameclients, SH_STATIC(Hook_ProcessUsercmds), false);
 	
-	subhook_remove(CCSPlayerPawn_PostThink_hook);
-	subhook_free(CCSPlayerPawn_PostThink_hook);
+	subhook_remove(CCSPP_PostThink_hook);
+	subhook_free(CCSPP_PostThink_hook);
 	
 	return true;
 }
 
-CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPlayerPawn_PostThink)
+internal b32 IsButtonDown(CInButtonState buttons, InputBitMask_t button)
 {
-	subhook_remove(CCSPlayerPawn_PostThink_hook);
-	CCSPlayerPawn_PostThink(this_);
+	b32 result = buttons.m_pButtonStates[0] & button;
+	return result;
+}
+
+internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
+{
+	subhook_remove(CCSPP_PostThink_hook);
+	CCSPP_PostThink(this_);
 	if (this_->m_fFlags & FL_ONGROUND)
 	{
 		// this_->m_vecAbsVelocity.z = 320.0f;
 	}
 	
-	subhook_install(CCSPlayerPawn_PostThink_hook);
+	subhook_install(CCSPP_PostThink_hook);
 }
 
-CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
+internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 {
 	subhook_remove(CCSP_MS__CheckJumpButton_hook);
 	CCSP_MS__CheckJumpButton(this_, mv);
+	gpGlobals = engine->GetServerGlobals();
 	
+	META_CONPRINTF("[%i (%.6f)]m_flJumpUntil %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil);
 	subhook_install(CCSP_MS__CheckJumpButton_hook);
 }
 
-void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
+internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
+{
+	subhook_remove(CCSP_MS__WalkMove_hook);
+	CCSP_MS__WalkMove(this_, mv);
+	gpGlobals = engine->GetServerGlobals();
+	
+	// speed cap
+	f32 speed = mv->m_vecVelocity.Length2D();
+	if (speed > 380.0f)
+	{
+		mv->m_vecVelocity *= 380.0f / speed;
+	}
+	
+	if (IsButtonDown(this_->m_nButtons, IN_FORWARD))
+	{
+		
+	}
+	
+	// META_CONPRINTF("[%i (%.6f)]m_flJumpUntil %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil);
+	subhook_install(CCSP_MS__WalkMove_hook);
+}
+
+internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
 	gpGlobals = engine->GetServerGlobals();
 }
 
-void Hook_ClientFullyConnect(CPlayerSlot slot)
+internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
 	CBaseEntity *test = PlayerSlotToPlayerController(slot);
 	engine->ClientCommand(slot, "say poopee");
@@ -177,7 +219,7 @@ void Hook_ClientFullyConnect(CPlayerSlot slot)
 	META_CONPRINTF("mapname: %s\n", gpGlobals->mapname);
 }
 
-float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused)
+internal float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused)
 {
 	
 	RETURN_META_VALUE(MRES_IGNORED, 0.0f);

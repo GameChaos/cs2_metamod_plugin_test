@@ -187,7 +187,7 @@ public:
 	CHandle<CBaseEntity> m_nPlayerHandle; // 0x4 don't know if this is actually a CHandle. <CBaseEntity> is a placeholder
 	uint8_t unknown1[0xC];
 	Vector m_vecViewAngles; // 0x14
-	float m_flForwardMove; // 0x20	
+	float m_flForwardMove; // 0x20
 	float m_flSideMove; // 0x24
 	float m_flUpMove; // 0x28
 	uint8_t unknown2[0x10]; // 0x2c
@@ -202,9 +202,11 @@ public:
 	Vector m_vecTrailingVelocity; // 0xa8
 	float m_flTrailingVelocityTime; // 0xb4
 	uint8_t unknown6[0x4]; // 0xb8
-	Vector m_vecOldAngles; // 0xbc
+	// offsets seem to be correct at least up to this point
 	float m_flMaxSpeed; // 0xc8
 	float m_flClientMaxSpeed; // 0xcc
+	
+	Vector m_vecOldAngles; // 0xbc
 	bool m_bJumpedThisTick; // 0xd0 related to dev_cs_enable_consistent_jumps
 	bool m_bSomethingWithGravity; // 0xd1 related to the new ShouldApplyGravity
 	uint8_t unknown7[0x2]; // 0xd2 Probably padding
