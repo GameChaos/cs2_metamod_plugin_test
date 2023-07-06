@@ -1,4 +1,7 @@
 
+#ifndef CS2_DATATYPES_H
+#define CS2_DATATYPES_H
+
 typedef uint32_t WorldGroupId_t;
 typedef int32_t GameTick_t;
 typedef float GameTime_t;
@@ -166,7 +169,7 @@ class CScriptComponent : public CEntityComponent
 {
 public:
 	uint8_t __pad0008[0x28]; // 0x8
-	CUtlSymbolLarge m_scriptClassName; // 0x30	
+	CUtlSymbolLarge m_scriptClassName; // 0x30
 };
 static_assert(sizeof(CScriptComponent) == 0x38, "Class didn't match expected size");
 
@@ -337,19 +340,19 @@ static_assert(sizeof(CNetworkTransmitComponent) == 0x1b0, "Class didn't match ex
 struct thinkfunc_t
 {
 	uint8_t __pad0000[0x8]; // 0x0
-	HSCRIPT m_hFn; // 0x8	
-	CUtlStringToken m_nContext; // 0x10	
-	GameTick_t m_nNextThinkTick; // 0x14	
-	GameTick_t m_nLastThinkTick; // 0x18	
+	HSCRIPT m_hFn; // 0x8
+	CUtlStringToken m_nContext; // 0x10
+	GameTick_t m_nNextThinkTick; // 0x14
+	GameTick_t m_nLastThinkTick; // 0x18
 };
 static_assert(sizeof(thinkfunc_t) == 0x20, "Class didn't match expected size");
 
 // Size: 0x18
 struct ResponseContext_t
 {
-	CUtlSymbolLarge m_iszName; // 0x0	
-	CUtlSymbolLarge m_iszValue; // 0x8	
-	GameTime_t m_fExpirationTime; // 0x10	
+	CUtlSymbolLarge m_iszName; // 0x0
+	CUtlSymbolLarge m_iszValue; // 0x8
+	GameTime_t m_fExpirationTime; // 0x10
 };
 static_assert(sizeof(ResponseContext_t) == 0x18, "Class didn't match expected size");
 
@@ -373,19 +376,19 @@ public:
 	// MNetworkMaxValue "4096.000000"
 	// MNetworkEncodeFlags
 	// MNetworkChangeCallback "CNetworkVelocityVector"
-	CNetworkedQuantizedFloat m_vecX; // 0x10	
+	CNetworkedQuantizedFloat m_vecX; // 0x10
 	// MNetworkBitCount "18"
 	// MNetworkMinValue "-4096.000000"
 	// MNetworkMaxValue "4096.000000"
 	// MNetworkEncodeFlags
 	// MNetworkChangeCallback "CNetworkVelocityVector"
-	CNetworkedQuantizedFloat m_vecY; // 0x18	
+	CNetworkedQuantizedFloat m_vecY; // 0x18
 	// MNetworkBitCount "18"
 	// MNetworkMinValue "-4096.000000"
 	// MNetworkMaxValue "4096.000000"
 	// MNetworkEncodeFlags
 	// MNetworkChangeCallback "CNetworkVelocityVector"
-	CNetworkedQuantizedFloat m_vecZ; // 0x20	
+	CNetworkedQuantizedFloat m_vecZ; // 0x20
 };
 static_assert(sizeof(CNetworkVelocityVector) == 0x28, "Class didn't match expected size");
 
@@ -395,21 +398,21 @@ struct VPhysicsCollisionAttribute_t
 public:
 	uint8_t __pad0000[0x8]; // 0x0
 	// MNetworkEnable
-	uint64_t m_nInteractsAs; // 0x8	
+	uint64_t m_nInteractsAs; // 0x8
 	// MNetworkEnable
-	uint64_t m_nInteractsWith; // 0x10	
+	uint64_t m_nInteractsWith; // 0x10
 	// MNetworkEnable
-	uint64_t m_nInteractsExclude; // 0x18	
+	uint64_t m_nInteractsExclude; // 0x18
 	// MNetworkEnable
-	uint32_t m_nEntityId; // 0x20	
+	uint32_t m_nEntityId; // 0x20
 	// MNetworkEnable
-	uint32_t m_nOwnerId; // 0x24	
+	uint32_t m_nOwnerId; // 0x24
 	// MNetworkEnable
-	uint16_t m_nHierarchyId; // 0x28	
+	uint16_t m_nHierarchyId; // 0x28
 	// MNetworkEnable
-	uint8_t m_nCollisionGroup; // 0x2a	
+	uint8_t m_nCollisionGroup; // 0x2a
 	// MNetworkEnable
-	uint8_t m_nCollisionFunctionMask; // 0x2b	
+	uint8_t m_nCollisionFunctionMask; // 0x2b
 };
 static_assert(sizeof(VPhysicsCollisionAttribute_t) == 0x30, "Class didn't match expected size");
 
@@ -421,46 +424,46 @@ public:
 	uint8_t __pad0000[0x10]; // 0x0
 	// MNetworkEnable
 	// MNetworkChangeCallback "CollisionAttributeChanged"
-	VPhysicsCollisionAttribute_t m_collisionAttribute; // 0x10	
+	VPhysicsCollisionAttribute_t m_collisionAttribute; // 0x10
 	// MNetworkEnable
 	// MNetworkChangeCallback "OnUpdateOBB"
-	Vector m_vecMins; // 0x40	
+	Vector m_vecMins; // 0x40
 	// MNetworkEnable
 	// MNetworkChangeCallback "OnUpdateOBB"
-	Vector m_vecMaxs; // 0x4c	
+	Vector m_vecMaxs; // 0x4c
 	uint8_t __pad0058[0x2]; // 0x58
 	// MNetworkEnable
 	// MNetworkChangeCallback "OnUpdateSolidFlags"
-	uint8_t m_usSolidFlags; // 0x5a	
+	uint8_t m_usSolidFlags; // 0x5a
 	// MNetworkEnable
 	// MNetworkChangeCallback "OnUpdateSolidType"
-	SolidType_t m_nSolidType; // 0x5b	
+	SolidType_t m_nSolidType; // 0x5b
 	// MNetworkEnable
 	// MNetworkChangeCallback "MarkSurroundingBoundsDirty"
-	uint8_t m_triggerBloat; // 0x5c	
+	uint8_t m_triggerBloat; // 0x5c
 	// MNetworkEnable
 	// MNetworkChangeCallback "MarkSurroundingBoundsDirty"
-	SurroundingBoundsType_t m_nSurroundType; // 0x5d	
+	SurroundingBoundsType_t m_nSurroundType; // 0x5d
 	// MNetworkEnable
-	uint8_t m_CollisionGroup; // 0x5e	
+	uint8_t m_CollisionGroup; // 0x5e
 	// MNetworkEnable
 	// MNetworkChangeCallback "OnUpdateEnablePhysics"
-	uint8_t m_nEnablePhysics; // 0x5f	
-	float m_flBoundingRadius; // 0x60	
+	uint8_t m_nEnablePhysics; // 0x5f
+	float m_flBoundingRadius; // 0x60
 	// MNetworkEnable
 	// MNetworkChangeCallback "MarkSurroundingBoundsDirty"
-	Vector m_vecSpecifiedSurroundingMins; // 0x64	
+	Vector m_vecSpecifiedSurroundingMins; // 0x64
 	// MNetworkEnable
 	// MNetworkChangeCallback "MarkSurroundingBoundsDirty"
-	Vector m_vecSpecifiedSurroundingMaxs; // 0x70	
-	Vector m_vecSurroundingMaxs; // 0x7c	
-	Vector m_vecSurroundingMins; // 0x88	
+	Vector m_vecSpecifiedSurroundingMaxs; // 0x70
+	Vector m_vecSurroundingMaxs; // 0x7c
+	Vector m_vecSurroundingMins; // 0x88
 	// MNetworkEnable
-	Vector m_vCapsuleCenter1; // 0x94	
+	Vector m_vCapsuleCenter1; // 0x94
 	// MNetworkEnable
-	Vector m_vCapsuleCenter2; // 0xa0	
+	Vector m_vCapsuleCenter2; // 0xa0
 	// MNetworkEnable
-	float m_flCapsuleRadius; // 0xac	
+	float m_flCapsuleRadius; // 0xac
 };
 #pragma pack(pop)
 static_assert(sizeof(CCollisionProperty) == 0xb0, "Class didn't match expected size");
@@ -630,3 +633,5 @@ public:
 	float m_flVPhysicsUpdateLocalTime; // 0x4ac
 };
 static_assert(sizeof(CBaseEntity) == 0x4b0, "Class didn't match expected size");
+
+#endif // CS2_DATATYPES_H
