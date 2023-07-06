@@ -18,14 +18,10 @@
 #include <stdio.h>
 #include "stub_mm.h"
 
-#include "gc_common.h"
+#define SIGSCAN_IMPLEMENTATION
+#include "sigscan.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#include <psapi.h>
-#else
-#error Only windows supported.
-#endif
+#include "gc_common.h"
 
 SH_DECL_HOOK3_void(ISource2Server, GameFrame, SH_NOATTRIB, false, bool, bool, bool);
 SH_DECL_HOOK1_void(ISource2GameClients, ClientFullyConnect, SH_NOATTRIB, false, CPlayerSlot);
@@ -65,29 +61,11 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	char *signature = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
 	char *mask = "xxxxxxxxx....xxxxx";
 	
-#ifdef _WIN32
-	char *binPath = "../../csgo/bin/win64/server.dll";
-	HMODULE bin = LoadLibrary(binPath);
-	
-	MODULEINFO info = {0};
-	GetModuleInformation(GetCurrentProcess(), bin, &info, sizeof(info));
-	
-	s64 binBytes = info.SizeOfImage;
-#elif __linux__
-	// untested
-	char *binPath = "server.so";
-	auto *bin = dlopen(binPath, RTLD_NOW);
-	
-	s64 binBytes = MEGABYTES(50);
-#endif
-	
-	if (!bin)
+	PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan("../../csgo/bin/win64/server.dll", signature, mask, error, maxlen);
+	if (PlayerSlotToPlayerController == NULL)
 	{
-		snprintf(error, maxlen, "Could not open %s", binPath);
+		return false;
 	}
-	
-	PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan(bin, binBytes, signature, mask);
-	
 	return true;
 }
 
@@ -135,30 +113,6 @@ float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ign
 {
 	
 	RETURN_META_VALUE(MRES_IGNORED, 0.0f);
-}
-
-uintptr_t SigScan(void *start, size_t maxScanBytes, char *pattern, char *ignorePattern)
-{
-	uintptr_t patternLen = strlen(ignorePattern);
-	
-	char *memory = (char *)start;
-	for (uintptr_t i = 0; i < maxScanBytes; i++)
-	{
-		uintptr_t matches = 0;
-		while (memory[i + matches] == pattern[matches] || ignorePattern[matches] != 'x')
-		{
-			matches++;
-			if (matches == 14)
-			{
-				matches = matches;
-			}
-			if (matches == patternLen)
-			{
-				return (uintptr_t)(memory + i);
-			}
-		}
-	}
-	return NULL;
 }
 
 void StubPlugin::AllPluginsLoaded()
