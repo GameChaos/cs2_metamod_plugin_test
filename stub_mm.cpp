@@ -23,6 +23,7 @@
 #include "stub_mm.h"
 #include "gc_common.h"
 #include "cs2_datatypes.h"
+#include "cs2_gamemovement.h"
 
 #include "subhook/subhook.h"
 
@@ -49,9 +50,15 @@ PlayerSlotToPlayerController_t *PlayerSlotToPlayerController = NULL;
 #define CBASEPLAYERPAWN_POSTTHINK(name) void name(CBaseEntity *this_)
 typedef CBASEPLAYERPAWN_POSTTHINK(CCSPlayerPawn_PostThink_t);
 CCSPlayerPawn_PostThink_t *CCSPlayerPawn_PostThink = NULL;
-
-CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPlayerPawn_PostThink);
 subhook_t CCSPlayerPawn_PostThink_hook;
+CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPlayerPawn_PostThink);
+
+#define CCSP_MS__CHECKJUMPBUTTON(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv)
+typedef CCSP_MS__CHECKJUMPBUTTON(CCSP_MS__CheckJumpButton_t);
+CCSP_MS__CheckJumpButton_t *CCSP_MS__CheckJumpButton = NULL;
+subhook_t CCSP_MS__CheckJumpButton_hook;
+CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton);
+
 
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
@@ -87,9 +94,22 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	{
 		return false;
 	}
-	
-	CCSPlayerPawn_PostThink_hook = subhook_new((void *)CCSPlayerPawn_PostThink, Hook_CCSPlayerPawn_PostThink, SUBHOOK_64BIT_OFFSET);
+	CCSPlayerPawn_PostThink_hook = subhook_new((void *)CCSPlayerPawn_PostThink,
+		Hook_CCSPlayerPawn_PostThink, SUBHOOK_64BIT_OFFSET);
 	subhook_install(CCSPlayerPawn_PostThink_hook);
+	
+	char *CCSP_MS__CheckJumpButton_sig = "\x48\x89\x5C\x24\x18\x56\x48\x83\xEC\x40\x48\x8B\xF2\x48";
+	char *CCSP_MS__CheckJumpButton_mask = "xxxxxxxxxxxxxx";
+	
+	CCSP_MS__CheckJumpButton = (CCSP_MS__CheckJumpButton_t *)SigScan(serverbin,
+		CCSP_MS__CheckJumpButton_sig, CCSP_MS__CheckJumpButton_mask, error, maxlen);
+	if (CCSP_MS__CheckJumpButton == NULL)
+	{
+		return false;
+	}
+	CCSP_MS__CheckJumpButton_hook = subhook_new((void *)CCSP_MS__CheckJumpButton,
+		Hook_CCSP_MS__CheckJumpButton, SUBHOOK_64BIT_OFFSET);
+	subhook_install(CCSP_MS__CheckJumpButton_hook);
 	
 	return true;
 }
@@ -110,8 +130,20 @@ CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPlayerPawn_PostThink)
 {
 	subhook_remove(CCSPlayerPawn_PostThink_hook);
 	CCSPlayerPawn_PostThink(this_);
+	if (this_->m_fFlags & FL_ONGROUND)
+	{
+		// this_->m_vecAbsVelocity.z = 320.0f;
+	}
 	
 	subhook_install(CCSPlayerPawn_PostThink_hook);
+}
+
+CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
+{
+	subhook_remove(CCSP_MS__CheckJumpButton_hook);
+	CCSP_MS__CheckJumpButton(this_, mv);
+	
+	subhook_install(CCSP_MS__CheckJumpButton_hook);
 }
 
 void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
