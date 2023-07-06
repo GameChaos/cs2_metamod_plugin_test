@@ -2425,6 +2425,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\stub_mm.cpp" />
+    <ClCompile Include="..\subhook\subhook.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release - CS2|x64'">SUBHOOK_STATIC;META_IS_SOURCE2=1;WIN32;NDEBUG;_WINDOWS;_USRDLL;STUB_MM_EXPORTS;COMPILER_MSVC;COMPILER_MSVC64;SOURCE_ENGINE=28;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\stub_mm.h" />

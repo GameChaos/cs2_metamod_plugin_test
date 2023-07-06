@@ -24,6 +24,8 @@
 #include "gc_common.h"
 #include "cs2_datatypes.h"
 
+#include "subhook/subhook.h"
+
 SH_DECL_HOOK3_void(ISource2Server, GameFrame, SH_NOATTRIB, false, bool, bool, bool);
 SH_DECL_HOOK1_void(ISource2GameClients, ClientFullyConnect, SH_NOATTRIB, false, CPlayerSlot);
 SH_DECL_HOOK5(ISource2GameClients, ProcessUsercmds, SH_NOATTRIB, false, float, CPlayerSlot, bf_read *, int, bool, bool);
@@ -44,6 +46,13 @@ uintptr_t FindPattern(void *start, size_t maxScanBytes, char *pattern, char *ign
 typedef CBaseEntity *PlayerSlotToPlayerController_t(CPlayerSlot slot);
 PlayerSlotToPlayerController_t *PlayerSlotToPlayerController = NULL;
 
+#define CBASEPLAYERPAWN_POSTTHINK(name) void name(CBaseEntity *this_)
+typedef CBASEPLAYERPAWN_POSTTHINK(CCSPlayerPawn_PostThink_t);
+CCSPlayerPawn_PostThink_t *CCSPlayerPawn_PostThink = NULL;
+
+CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPlayerPawn_PostThink);
+subhook_t CCSPlayerPawn_PostThink_hook;
+
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
@@ -59,14 +68,29 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	SH_ADD_HOOK(ISource2GameClients, ProcessUsercmds, gameclients, SH_STATIC(Hook_ProcessUsercmds), false);
 	
 	// windows
+	char *serverbin = "../../csgo/bin/win64/server.dll";
+	
 	char *signature = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
 	char *mask = "xxxxxxxxx....xxxxx";
 	
-	PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan("../../csgo/bin/win64/server.dll", signature, mask, error, maxlen);
+	PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan(serverbin, signature, mask, error, maxlen);
 	if (PlayerSlotToPlayerController == NULL)
 	{
 		return false;
 	}
+	
+	char *CCSPlayerPawn_PostThink_sig = "\x48\x8B\xC4\x48\x89\x48\x08\x55\x53\x56\x57\x41\x54\x41\x56\x41";
+	char *CCSPlayerPawn_PostThink_mask = "xxxxxxxxxxxxxxxx";
+	CCSPlayerPawn_PostThink = (CCSPlayerPawn_PostThink_t *)SigScan(serverbin,
+		CCSPlayerPawn_PostThink_sig, CCSPlayerPawn_PostThink_mask, error, maxlen);
+	if (CCSPlayerPawn_PostThink == NULL)
+	{
+		return false;
+	}
+	
+	CCSPlayerPawn_PostThink_hook = subhook_new((void *)CCSPlayerPawn_PostThink, Hook_CCSPlayerPawn_PostThink, SUBHOOK_64BIT_OFFSET);
+	subhook_install(CCSPlayerPawn_PostThink_hook);
+	
 	return true;
 }
 
@@ -76,7 +100,18 @@ bool StubPlugin::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK(ISource2GameClients, ClientFullyConnect, gameclients, SH_STATIC(Hook_ClientFullyConnect), false);
 	SH_REMOVE_HOOK(ISource2GameClients, ProcessUsercmds, gameclients, SH_STATIC(Hook_ProcessUsercmds), false);
 	
+	subhook_remove(CCSPlayerPawn_PostThink_hook);
+	subhook_free(CCSPlayerPawn_PostThink_hook);
+	
 	return true;
+}
+
+CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPlayerPawn_PostThink)
+{
+	subhook_remove(CCSPlayerPawn_PostThink_hook);
+	CCSPlayerPawn_PostThink(this_);
+	
+	subhook_install(CCSPlayerPawn_PostThink_hook);
 }
 
 void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
