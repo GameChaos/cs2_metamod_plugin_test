@@ -9,7 +9,6 @@ typedef uint64_t CNetworkedQuantizedFloat;
 
 class CBaseFilter;
 
-#include "../game/shared/ehandle.h"
 #include "utlsymbollarge.h"
 #include "ihandleentity.h"
 #include "vscript/ivscript.h"
@@ -84,10 +83,126 @@ enum InputBitMask_t : uint64_t
 	IN_LOOK_AT_WEAPON = 0x800000000,
 };
 
+enum TOGGLE_STATE : uint32_t
+{
+	TS_AT_TOP = 0x0,
+	TS_AT_BOTTOM = 0x1,
+	TS_GOING_UP = 0x2,
+	TS_GOING_DOWN = 0x3,
+	DOOR_OPEN = 0x0,
+	DOOR_CLOSED = 0x1,
+	DOOR_OPENING = 0x2,
+	DOOR_CLOSING = 0x3,
+};
+
+enum HitGroup_t : uint32_t
+{
+	HITGROUP_INVALID = 0xffffffffffffffff,
+	HITGROUP_GENERIC = 0x0,
+	HITGROUP_HEAD = 0x1,
+	HITGROUP_CHEST = 0x2,
+	HITGROUP_STOMACH = 0x3,
+	HITGROUP_LEFTARM = 0x4,
+	HITGROUP_RIGHTARM = 0x5,
+	HITGROUP_LEFTLEG = 0x6,
+	HITGROUP_RIGHTLEG = 0x7,
+	HITGROUP_NECK = 0x8,
+	HITGROUP_UNUSED = 0x9,
+	HITGROUP_GEAR = 0xa,
+	HITGROUP_SPECIAL = 0xb,
+	HITGROUP_COUNT = 0xc,
+};
+
+enum Disposition_t : uint32_t
+{
+	D_ER = 0x0,
+	D_HT = 0x1,
+	D_FR = 0x2,
+	D_LI = 0x3,
+	D_NU = 0x4,
+	D_ERROR = 0x0,
+	D_HATE = 0x1,
+	D_FEAR = 0x2,
+	D_LIKE = 0x3,
+	D_NEUTRAL = 0x4,
+};
+
+enum Class_T : uint32_t
+{
+	CLASS_NONE = 0x0,
+	CLASS_PLAYER = 0x1,
+	CLASS_PLAYER_ALLY = 0x2,
+	CLASS_DZ_DRONE = 0x3,
+	CLASS_DZ_SPAWN_CHOPPER = 0x4,
+	CLASS_BOMB = 0x5,
+	CLASS_FOOT_CONTACT_SHADOW = 0x6,
+	CLASS_WEAPON_VIEWMODEL = 0x7,
+	NUM_CLASSIFY_CLASSES = 0x8,
+};
+
+enum Hull_t : uint32_t
+{
+	HULL_HUMAN = 0x0,
+	HULL_SMALL_CENTERED = 0x1,
+	HULL_WIDE_HUMAN = 0x2,
+	HULL_TINY = 0x3,
+	HULL_MEDIUM = 0x4,
+	HULL_TINY_CENTERED = 0x5,
+	HULL_LARGE = 0x6,
+	HULL_LARGE_CENTERED = 0x7,
+	HULL_MEDIUM_TALL = 0x8,
+	HULL_SMALL = 0x9,
+	NUM_HULLS = 0xa,
+	HULL_NONE = 0xb,
+};
+
+enum ObserverMode_t : uint32_t
+{
+	OBS_MODE_NONE = 0x0,
+	OBS_MODE_FIXED = 0x1,
+	OBS_MODE_IN_EYE = 0x2,
+	OBS_MODE_CHASE = 0x3,
+	OBS_MODE_ROAMING = 0x4,
+	OBS_MODE_DIRECTED = 0x5,
+	NUM_OBSERVER_MODES = 0x6,
+};
+
+enum ChatIgnoreType_t : uint32_t
+{
+	CHAT_IGNORE_NONE = 0x0,
+	CHAT_IGNORE_ALL = 0x1,
+	CHAT_IGNORE_TEAM = 0x2,
+};
+
+enum PlayerConnectedState : uint32_t
+{
+	PlayerNeverConnected = 0xffffffffffffffff,
+	PlayerConnected = 0x0,
+	PlayerConnecting = 0x1,
+	PlayerReconnecting = 0x2,
+	PlayerDisconnecting = 0x3,
+	PlayerDisconnected = 0x4,
+	PlayerReserved = 0x5,
+};
+
+enum FixAngleSet_t : uint8_t
+{
+	None = 0x0,
+	Absolute = 0x1,
+	Relative = 0x2,
+};
+
 // Size: 0x2
 struct ChangeAccessorFieldPathIndex_t
 {
 	int16_t m_Value; // 0x0
+};
+
+template< class T >
+class CHandle
+{
+public:
+	uint32_t m_Index;
 };
 
 // NOTE: Stub!
@@ -104,6 +219,28 @@ public:
 	uint32_t m_nHashCode;
 };
 static_assert(sizeof(CUtlStringToken) == 4, "Class didn't match expected size");
+
+template < class T >
+class CUtlVectorEmbeddedNetworkVar
+{
+public:
+	uint8_t unknown[0x50];
+};
+
+// Size: 0x18
+template< class T >
+class CNetworkUtlVectorBase
+{
+public:
+	uint8_t unknown[0x18];
+};
+
+// Size: 0x4
+struct AnimationUpdateListHandle_t
+{
+public:
+	uint32_t m_Value; // 0x0
+};
 
 // Size: 0x30
 class CNetworkOriginCellCoordQuantizedVector
@@ -153,6 +290,32 @@ public:
 	CNetworkedQuantizedFloat m_vecZ; // 0x28
 };
 static_assert(sizeof(CNetworkOriginCellCoordQuantizedVector) == 0x30, "Class didn't match expected size");
+
+// Size: 0x28
+class CNetworkViewOffsetVector
+{
+public:
+	uint8_t __pad0000[0x10]; // 0x0
+	// MNetworkBitCount "10"
+	// MNetworkMinValue "-64.000000"
+	// MNetworkMaxValue "64.000000"
+	// MNetworkEncodeFlags
+	// MNetworkChangeCallback "CNetworkViewOffsetVector"
+	CNetworkedQuantizedFloat m_vecX; // 0x10
+	// MNetworkBitCount "10"
+	// MNetworkMinValue "-64.000000"
+	// MNetworkMaxValue "64.000000"
+	// MNetworkEncodeFlags
+	// MNetworkChangeCallback "CNetworkViewOffsetVector"
+	CNetworkedQuantizedFloat m_vecY; // 0x18
+	// MNetworkBitCount "20"
+	// MNetworkMinValue "0.000000"
+	// MNetworkMaxValue "128.000000"
+	// MNetworkEncodeFlags
+	// MNetworkChangeCallback "CNetworkViewOffsetVector"
+	CNetworkedQuantizedFloat m_vecZ; // 0x20
+};
+static_assert(sizeof(CNetworkViewOffsetVector) == 0x28, "Class didn't match expected size");
 
 // Size: 0x28
 class CNetworkVarChainer
@@ -245,7 +408,7 @@ static_assert(sizeof(CTransform) == 0x20, "Class didn't match expected size");
 class CGameSceneNodeHandle
 {
 private:
-	[[maybe_unused]] uint8_t __pad0000[0x8]; // 0x0
+	uint8_t __pad0000[0x8]; // 0x0
 public:
 	// MNetworkEnable
 	CEntityHandle m_hOwner; // 0x8
@@ -671,5 +834,842 @@ public:
 	float m_flVPhysicsUpdateLocalTime; // 0x4ac
 };
 static_assert(sizeof(CBaseEntity) == 0x4b0, "Class didn't match expected size");
+
+class CBasePlayerPawn;
+// Size: 0x690
+class CBasePlayerController : public CBaseEntity
+{
+public:
+	uint8_t __pad04b0[0x8]; // 0x4b0
+	uint64_t m_nInButtonsWhichAreToggles; // 0x4b8
+	// MNetworkEnable
+	// MNetworkPriority "1"
+	// MNetworkUserGroup "LocalPlayerExclusive"
+	uint32_t m_nTickBase; // 0x4c0
+	uint8_t __pad04c4[0x2c]; // 0x4c4
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnPawnChanged"
+	CHandle< CBasePlayerPawn > m_hPawn; // 0x4f0
+	CSplitScreenSlot m_nSplitScreenSlot; // 0x4f4
+	CHandle< CBasePlayerController > m_hSplitOwner; // 0x4f8
+	uint8_t __pad04fc[0x4]; // 0x4fc
+	CUtlVector< CHandle< CBasePlayerController > > m_hSplitScreenPlayers; // 0x500
+	bool m_bIsHLTV; // 0x518
+	uint8_t __pad0519[0x3]; // 0x519
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnConnectionStateChanged"
+	PlayerConnectedState m_iConnected; // 0x51c
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnPlayerControllerNameChanged"
+	char m_iszPlayerName[128]; // 0x520
+	CUtlString m_szNetworkIDString; // 0x5a0
+	float m_fLerpTime; // 0x5a8
+	bool m_bLagCompensation; // 0x5ac
+	bool m_bPredict; // 0x5ad
+	bool m_bAutoKickDisabled; // 0x5ae
+	bool m_bIsLowViolence; // 0x5af
+	bool m_bGamePaused; // 0x5b0
+	uint8_t __pad05b1[0x77]; // 0x5b1
+	int32_t m_nHighestCommandNumberReceived; // 0x628
+	uint8_t __pad062c[0x4]; // 0x62c
+	int64_t m_nUsecTimestampLastUserCmdReceived; // 0x630
+	uint8_t __pad0638[0x10]; // 0x638
+	ChatIgnoreType_t m_iIgnoreGlobalChat; // 0x648
+	float m_flLastPlayerTalkTime; // 0x64c
+	float m_flLastEntitySteadyState; // 0x650
+	int32_t m_nAvailableEntitySteadyState; // 0x654
+	bool m_bHasAnySteadyStateEnts; // 0x658
+	uint8_t __pad0659[0xf]; // 0x659
+	// MNetworkEnable
+	// MNetworkEncoder
+	// MNetworkChangeCallback "OnSteamIDChanged"
+	uint64_t m_steamID; // 0x668
+	// MNetworkEnable
+	uint32_t m_iDesiredFOV; // 0x670
+	uint8_t __pad0674[0x1c]; // 0x674
+};
+static_assert(sizeof(CBasePlayerController) == 0x690, "Class didn't match expected size");
+
+// Size: 0xb8
+class CRenderComponent : public CEntityComponent
+{
+public:
+	uint8_t __pad0008[0x8]; // 0x8
+	// MNetworkDisable
+	// MNetworkChangeAccessorFieldPathIndex
+	CNetworkVarChainer __m_pChainEntity; // 0x10
+	uint8_t __pad0038[0x18]; // 0x38
+	bool m_bIsRenderingWithViewModels; // 0x50
+	uint8_t __pad0051[0x3]; // 0x51
+	uint32_t m_nSplitscreenFlags; // 0x54
+	uint8_t __pad0058[0x8]; // 0x58
+	bool m_bEnableRendering; // 0x60
+	uint8_t __pad0061[0x4f]; // 0x61
+	bool m_bInterpolationReadyToDraw; // 0xb0
+	uint8_t __pad00b1[0x7]; // 0xb1
+};
+static_assert(sizeof(CRenderComponent) == 0xb8, "Class didn't match expected size");
+
+// Size: 0x28
+class CHitboxComponent : public CEntityComponent
+{
+public:
+	uint8_t __pad0008[0x1c]; // 0x8
+	// MNetworkEnable
+	uint32_t m_bvDisabledHitGroups[1]; // 0x24
+};
+static_assert(sizeof(CHitboxComponent) == 0x28, "Class didn't match expected size");
+
+// Size: 0x58
+class CGlowProperty
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	Vector m_fGlowColor; // 0x8
+	uint8_t __pad0014[0x1c]; // 0x14
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnGlowTypeChanged"
+	int32_t m_iGlowType; // 0x30
+	// MNetworkEnable
+	int32_t m_iGlowTeam; // 0x34
+	// MNetworkEnable
+	int32_t m_nGlowRange; // 0x38
+	// MNetworkEnable
+	int32_t m_nGlowRangeMin; // 0x3c
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnGlowColorChanged"
+	Color m_glowColorOverride; // 0x40
+	// MNetworkEnable
+	bool m_bFlashing; // 0x44
+	uint8_t __pad0045[0x3]; // 0x45
+	// MNetworkEnable
+	float m_flGlowTime; // 0x48
+	// MNetworkEnable
+	float m_flGlowStartTime; // 0x4c
+	// MNetworkEnable
+	bool m_bEligibleForScreenHighlight; // 0x50
+	bool m_bGlowing; // 0x51
+	uint8_t __pad0052[0x6]; // 0x52
+};
+static_assert(sizeof(CGlowProperty) == 0x58, "Class didn't match expected size");
+
+// Size: 0x48
+struct EntityRenderAttribute_t
+{
+public:
+	uint8_t __pad0000[0x30]; // 0x0
+	// MNetworkEnable
+	CUtlStringToken m_ID; // 0x30
+	// MNetworkEnable
+	Vector4D m_Values; // 0x34
+	uint8_t __pad0044[0x4]; // 0x44
+};
+static_assert(sizeof(EntityRenderAttribute_t) == 0x48, "Class didn't match expected size");
+
+// Size: 0x700
+class CBaseModelEntity : public CBaseEntity
+{
+public:
+	// MNetworkEnable
+	// MNetworkUserGroup "CRenderComponent"
+	// MNetworkAlias "CRenderComponent"
+	// MNetworkTypeAlias "CRenderComponent"
+	CRenderComponent *m_CRenderComponent; // 0x4b0
+	// MNetworkEnable
+	// MNetworkUserGroup "CHitboxComponent"
+	// MNetworkAlias "CHitboxComponent"
+	// MNetworkTypeAlias "CHitboxComponent"
+	CHitboxComponent m_CHitboxComponent; // 0x4b8
+	GameTime_t m_flDissolveStartTime; // 0x4e0
+	uint8_t __pad04e4[0x4]; // 0x4e4
+	CEntityIOOutput m_OnIgnite; // 0x4e8
+	// MNetworkEnable
+	RenderMode_t m_nRenderMode; // 0x510
+	// MNetworkEnable
+	RenderFx_t m_nRenderFX; // 0x511
+	bool m_bAllowFadeInView; // 0x512
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnColorChanged"
+	Color m_clrRender; // 0x513
+	uint8_t __pad0517[0x1]; // 0x517
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnRenderAttributesChanged"
+	CUtlVectorEmbeddedNetworkVar< EntityRenderAttribute_t > m_vecRenderAttributes; // 0x518
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnLightGroupChanged"
+	CUtlStringToken m_LightGroup; // 0x568
+	// MNetworkEnable
+	bool m_bRenderToCubemaps; // 0x56c
+	uint8_t __pad056d[0x3]; // 0x56d
+	// MNetworkEnable
+	CCollisionProperty m_Collision; // 0x570
+	// MNetworkEnable
+	CGlowProperty m_Glow; // 0x620
+	// MNetworkEnable
+	float m_flGlowBackfaceMult; // 0x678
+	// MNetworkEnable
+	float m_fadeMinDist; // 0x67c
+	// MNetworkEnable
+	float m_fadeMaxDist; // 0x680
+	// MNetworkEnable
+	float m_flFadeScale; // 0x684
+	// MNetworkEnable
+	float m_flShadowStrength; // 0x688
+	// MNetworkEnable
+	uint8_t m_nObjectCulling; // 0x68c
+	uint8_t __pad068d[0x3]; // 0x68d
+	// MNetworkEnable
+	int32_t m_nAddDecal; // 0x690
+	// MNetworkEnable
+	Vector m_vDecalPosition; // 0x694
+	// MNetworkEnable
+	Vector m_vDecalForwardAxis; // 0x6a0
+	// MNetworkEnable
+	float m_flDecalHealBloodRate; // 0x6ac
+	// MNetworkEnable
+	float m_flDecalHealHeightRate; // 0x6b0
+	uint8_t __pad06b4[0x4]; // 0x6b4
+	// MNetworkEnable
+	CNetworkUtlVectorBase< CHandle< CBaseModelEntity > > m_ConfigEntitiesToPropagateMaterialDecalsTo; // 0x6b8
+	// MNetworkEnable
+	// MNetworkPriority "32"
+	// MNetworkUserGroup "Player"
+	CNetworkViewOffsetVector m_vecViewOffset; // 0x6d0
+};
+static_assert(sizeof(CBaseModelEntity) == 0x700, "Class didn't match expected size");
+
+// Size: 0x50
+struct PhysicsRagdollPose_t
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkDisable
+	// MNetworkChangeAccessorFieldPathIndex
+	CNetworkVarChainer __m_pChainEntity; // 0x8
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnTransformChanged"
+	CNetworkUtlVectorBase< CTransform > m_Transforms; // 0x30
+	// MNetworkEnable
+	CHandle< CBaseEntity > m_hOwner; // 0x48
+	uint8_t __pad0052[4];
+};
+static_assert(sizeof(PhysicsRagdollPose_t) == 0x50, "Class didn't match expected size");
+
+// Size: 0x930
+class CBaseAnimGraph : public CBaseModelEntity
+{
+public:
+	uint8_t __pad0700[0x8]; // 0x700
+	// MNetworkEnable
+	bool m_bInitiallyPopulateInterpHistory; // 0x708
+	// MNetworkEnable
+	bool m_bShouldAnimateDuringGameplayPause; // 0x709
+	uint8_t __pad070a[0x6]; // 0x70a
+	void *m_pChoreoServices; // 0x710 IChoreoServices *
+	// MNetworkEnable
+	bool m_bAnimGraphUpdateEnabled; // 0x718
+	uint8_t __pad0719[0x93]; // 0x719
+	// MNetworkDisable
+	float m_flLastEventAnimTime; // 0x7ac
+	uint8_t __pad07b0[0x4]; // 0x7b0
+	// MNetworkDisable
+	AnimationUpdateListHandle_t m_hAnimationUpdate; // 0x7b4
+	float m_flMaxSlopeDistance; // 0x7b8
+	Vector m_vLastSlopeCheckPos; // 0x7bc
+	bool m_bAnimGraphDirty; // 0x7c8
+	uint8_t __pad07c9[0x3]; // 0x7c9
+	// MNetworkEnable
+	Vector m_vecForce; // 0x7cc
+	// MNetworkEnable
+	int32_t m_nForceBone; // 0x7d8
+	uint8_t __pad07dc[0x14]; // 0x7dc
+	// MNetworkEnable
+	PhysicsRagdollPose_t *m_pRagdollPose; // 0x7f0
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnClientRagdollChanged"
+	bool m_bClientRagdoll; // 0x7f8
+	uint8_t __pad07f9[0x137]; // 0x7c9
+};
+static_assert(sizeof(CBaseAnimGraph) == 0x930, "Class didn't match expected size");
+
+// Size: 0x9c0
+class CBaseFlex : public CBaseAnimGraph
+{
+public:
+	// MNetworkEnable
+	// MNetworkBitCount "12"
+	// MNetworkMinValue "0.000000"
+	// MNetworkMaxValue "1.000000"
+	// MNetworkEncodeFlags
+	CNetworkUtlVectorBase< float32 > m_flexWeight; // 0x930
+	// MNetworkEnable
+	// MNetworkEncoder
+	Vector m_vLookTargetPosition; // 0x948
+	// MNetworkEnable
+	bool m_blinktoggle; // 0x954
+	uint8_t __pad0955[0x53]; // 0x955
+	GameTime_t m_flAllowResponsesEndTime; // 0x9a8
+	GameTime_t m_flLastFlexAnimationTime; // 0x9ac
+	uint32_t m_nNextSceneEventId; // 0x9b0
+	bool m_bUpdateLayerPriorities; // 0x9b4
+	uint8_t __pad09b5[0xb]; // 0x9b5
+};
+static_assert(sizeof(CBaseFlex) == 0x9c0, "Class didn't match expected size");
+
+// Size: 0x8
+struct Relationship_t
+{
+public:
+	Disposition_t disposition; // 0x0
+	int32_t priority; // 0x4
+};
+static_assert(sizeof(Relationship_t) == 0x8, "Class didn't match expected size");
+
+// Size: 0x10
+struct RelationshipOverride_t : public Relationship_t
+{
+public:
+	CHandle< CBaseEntity > entity; // 0x8
+	Class_T classType; // 0xc
+};
+static_assert(sizeof(RelationshipOverride_t) == 0x10, "Class didn't match expected size");
+
+// Size: 0xa78
+class CBaseCombatCharacter : public CBaseFlex
+{
+public:
+	bool m_bForceServerRagdoll; // 0x9c0
+	uint8_t __pad09c1[0x7]; // 0x9c1
+	// MNetworkEnable
+	CNetworkUtlVectorBase< CHandle< CBaseFlex > > m_hMyWearables; // 0x9c8 CNetworkUtlVectorBase< CHandle< CEconWearable > >
+	// MNetworkEnable
+	float m_flFieldOfView; // 0x9e0
+	float m_impactEnergyScale; // 0x9e4
+	HitGroup_t m_LastHitGroup; // 0x9e8
+	bool m_bApplyStressDamage; // 0x9ec
+	uint8_t __pad09ed[0x3]; // 0x9ed
+	int32_t m_bloodColor; // 0x9f0
+	uint8_t __pad09f4[0x5c]; // 0x9f4
+	int32_t m_registeredNavTeam; // 0xa50
+	int32_t m_navMeshID; // 0xa54
+	int32_t m_iDamageCount; // 0xa58
+	uint8_t __pad0a5c[0x4]; // 0xa5c
+	CUtlVector< RelationshipOverride_t >* m_pVecRelationships; // 0xa60
+	CUtlSymbolLarge m_strRelationships; // 0xa68
+	Hull_t m_eHull; // 0xa70
+	uint32_t m_nNavHullIdx; // 0xa74
+};
+
+static_assert(sizeof(CBaseCombatCharacter) == 0xa78, "Class didn't match expected size");
+
+// Size: 0x780
+class CBaseToggle : public CBaseModelEntity
+{
+public:
+	TOGGLE_STATE m_toggle_state; // 0x700
+	float m_flMoveDistance; // 0x704
+	float m_flWait; // 0x708
+	float m_flLip; // 0x70c
+	bool m_bAlwaysFireBlockedOutputs; // 0x710
+	uint8_t __pad0711[0x3]; // 0x711
+	Vector m_vecPosition1; // 0x714
+	Vector m_vecPosition2; // 0x720
+	QAngle m_vecMoveAng; // 0x72c
+	QAngle m_vecAngle1; // 0x738
+	QAngle m_vecAngle2; // 0x744
+	float m_flHeight; // 0x750
+	CHandle< CBaseEntity > m_hActivator; // 0x754
+	Vector m_vecFinalDest; // 0x758
+	QAngle m_vecFinalAngle; // 0x764
+	int32_t m_movementType; // 0x770
+	uint8_t __pad0774[0x4]; // 0x774
+	CUtlSymbolLarge m_sMaster; // 0x778
+};
+static_assert(sizeof(CBaseToggle) == 0x780, "Class didn't match expected size");
+
+// Size: 0x40
+class CPlayerPawnComponent
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkDisable
+	// MNetworkChangeAccessorFieldPathIndex
+	CNetworkVarChainer __m_pChainEntity; // 0x8
+	uint8_t __pad0030[0x10]; // 0x0
+};
+static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
+
+// Size: 0xb0
+class CPlayer_WeaponServices : public CPlayerPawnComponent
+{
+public:
+	bool m_bAllowSwitchToNoWeapon; // 0x40
+	uint8_t __pad0041[0x7]; // 0x41
+	// MNetworkEnable
+	CNetworkUtlVectorBase< CHandle< CBaseFlex > > m_hMyWeapons; // 0x48 CNetworkUtlVectorBase< CHandle< CBasePlayerWeapon > >
+	// MNetworkEnable
+	CHandle< CBaseFlex > m_hActiveWeapon; // 0x60 CHandle< CBasePlayerWeapon >
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerExclusive"
+	CHandle< CBaseFlex > m_hLastWeapon; // 0x64 CHandle< CBasePlayerWeapon >
+	// MNetworkEnable
+	uint16_t m_iAmmo[32]; // 0x68
+	bool m_bPreventWeaponPickup; // 0xa8
+	uint8_t __pad00a9[0x7];
+};
+static_assert(sizeof(CPlayer_WeaponServices) == 0xb0, "Class didn't match expected size");
+
+// Size: 0x40
+class CPlayer_ItemServices : public CPlayerPawnComponent
+{
+public:
+	// No members available
+};
+static_assert(sizeof(CPlayer_ItemServices) == 0x40, "Class didn't match expected size");
+
+// Size: 0x40
+class CPlayer_AutoaimServices : public CPlayerPawnComponent
+{
+public:
+	// No members available
+};
+static_assert(sizeof(CPlayer_AutoaimServices) == 0x40, "Class didn't match expected size");
+
+// Size: 0x50
+class CPlayer_ObserverServices : public CPlayerPawnComponent
+{
+public:
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnObserverModeChanged"
+	uint8_t m_iObserverMode; // 0x40
+	uint8_t __pad0041[0x3]; // 0x41
+	// MNetworkEnable
+	// MNetworkChangeCallback "OnObserverTargetChanged"
+	CHandle< CBaseEntity > m_hObserverTarget; // 0x44
+	ObserverMode_t m_iObserverLastMode; // 0x48
+	bool m_bForcedObserverMode; // 0x4c
+};
+static_assert(sizeof(CPlayer_ObserverServices) == 0x50, "Class didn't match expected size");
+
+// Size: 0x40
+class CPlayer_WaterServices : public CPlayerPawnComponent
+{
+public:
+	// No members available
+};
+static_assert(sizeof(CPlayer_WaterServices) == 0x40, "Class didn't match expected size");
+
+// Size: 0x40
+class CPlayer_UseServices : public CPlayerPawnComponent
+{
+public:
+	// No members available
+};
+static_assert(sizeof(CPlayer_UseServices) == 0x40, "Class didn't match expected size");
+
+// Size: 0x40
+class CPlayer_FlashlightServices : public CPlayerPawnComponent
+{
+public:
+	// No members available
+};
+static_assert(sizeof(CPlayer_FlashlightServices) == 0x40, "Class didn't match expected size");
+
+// Size: 0x68
+struct fogparams_t
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkEnable
+	// MNetworkEncoder
+	Vector dirPrimary; // 0x8
+	// MNetworkEnable
+	Color colorPrimary; // 0x14
+	// MNetworkEnable
+	Color colorSecondary; // 0x18
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	Color colorPrimaryLerpTo; // 0x1c
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	Color colorSecondaryLerpTo; // 0x20
+	// MNetworkEnable
+	float start; // 0x24
+	// MNetworkEnable
+	float end; // 0x28
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float farz; // 0x2c
+	// MNetworkEnable
+	float maxdensity; // 0x30
+	// MNetworkEnable
+	float exponent; // 0x34
+	// MNetworkEnable
+	float HDRColorScale; // 0x38
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float skyboxFogFactor; // 0x3c
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float skyboxFogFactorLerpTo; // 0x40
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float startLerpTo; // 0x44
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float endLerpTo; // 0x48
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float maxdensityLerpTo; // 0x4c
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	GameTime_t lerptime; // 0x50
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float duration; // 0x54
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float blendtobackground; // 0x58
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float scattering; // 0x5c
+	// MNetworkEnable
+	// MNetworkUserGroup "FogController"
+	float locallightscale; // 0x60
+	// MNetworkEnable
+	bool enable; // 0x64
+	// MNetworkEnable
+	bool blend; // 0x65
+	// MNetworkEnable
+	bool m_bNoReflectionFog; // 0x66
+	bool m_bPadding; // 0x67
+};
+static_assert(sizeof(fogparams_t) == 0x68, "Class didn't match expected size");
+
+// Size: 0x520
+class CFogController : public CBaseEntity
+{
+public:
+	// MNetworkEnable
+	fogparams_t m_fog; // 0x4b0
+	bool m_bUseAngles; // 0x518
+	uint8_t __pad0519[0x3]; // 0x519
+	int32_t m_iChangedVariables; // 0x51c
+};
+static_assert(sizeof(CFogController) == 0x520, "Class didn't match expected size");
+
+// Size: 0x40
+struct fogplayerparams_t
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkEnable
+	// MNetworkUserGroup "PlayerFogController"
+	CHandle< CFogController > m_hCtrl; // 0x8
+	float m_flTransitionTime; // 0xc
+	Color m_OldColor; // 0x10
+	float m_flOldStart; // 0x14
+	float m_flOldEnd; // 0x18
+	float m_flOldMaxDensity; // 0x1c
+	float m_flOldHDRColorScale; // 0x20
+	float m_flOldFarZ; // 0x24
+	Color m_NewColor; // 0x28
+	float m_flNewStart; // 0x2c
+	float m_flNewEnd; // 0x30
+	float m_flNewMaxDensity; // 0x34
+	float m_flNewHDRColorScale; // 0x38
+	float m_flNewFarZ; // 0x3c
+};
+static_assert(sizeof(fogplayerparams_t) == 0x40, "Class didn't match expected size");
+
+// Size: 0x6e8
+class CColorCorrection : public CBaseEntity
+{
+public:
+	// MNetworkEnable
+	float m_flFadeInDuration; // 0x4b0
+	// MNetworkEnable
+	float m_flFadeOutDuration; // 0x4b4
+	float m_flStartFadeInWeight; // 0x4b8
+	float m_flStartFadeOutWeight; // 0x4bc
+	GameTime_t m_flTimeStartFadeIn; // 0x4c0
+	GameTime_t m_flTimeStartFadeOut; // 0x4c4
+	// MNetworkEnable
+	float m_flMaxWeight; // 0x4c8
+	bool m_bStartDisabled; // 0x4cc
+	// MNetworkEnable
+	bool m_bEnabled; // 0x4cd
+	// MNetworkEnable
+	bool m_bMaster; // 0x4ce
+	// MNetworkEnable
+	bool m_bClientSide; // 0x4cf
+	// MNetworkEnable
+	bool m_bExclusive; // 0x4d0
+	uint8_t __pad04d1[0x3]; // 0x4d1
+	// MNetworkEnable
+	float m_MinFalloff; // 0x4d4
+	// MNetworkEnable
+	float m_MaxFalloff; // 0x4d8
+	// MNetworkEnable
+	float m_flCurWeight; // 0x4dc
+	// MNetworkEnable
+	char m_netlookupFilename[512]; // 0x4e0
+	CUtlSymbolLarge m_lookupFilename; // 0x6e0
+};
+static_assert(sizeof(CColorCorrection) == 0x6e8, "Class didn't match expected size");
+
+// Size: 0x4d8
+class CTonemapController2 : public CBaseEntity
+{
+public:
+	// MNetworkEnable
+	float m_flAutoExposureMin; // 0x4b0
+	// MNetworkEnable
+	float m_flAutoExposureMax; // 0x4b4
+	// MNetworkEnable
+	float m_flTonemapPercentTarget; // 0x4b8
+	// MNetworkEnable
+	float m_flTonemapPercentBrightPixels; // 0x4bc
+	// MNetworkEnable
+	float m_flTonemapMinAvgLum; // 0x4c0
+	// MNetworkEnable
+	float m_flExposureAdaptationSpeedUp; // 0x4c4
+	// MNetworkEnable
+	float m_flExposureAdaptationSpeedDown; // 0x4c8
+	// MNetworkEnable
+	float m_flTonemapEVSmoothingRange; // 0x4cc
+	uint8_t __pad04d0[0x8]; // 0x4d0
+};
+static_assert(sizeof(CTonemapController2) == 0x4d8, "Class didn't match expected size");
+
+// Size: 0x78
+struct audioparams_t
+{
+private:
+	[[maybe_unused]] uint8_t __pad0000[0x8]; // 0x0
+public:
+	// MNetworkEnable
+	// MNetworkEncoder
+	Vector localSound[8]; // 0x8	
+	// MNetworkEnable
+	int32_t soundscapeIndex; // 0x68	
+	// MNetworkEnable
+	uint8_t localBits; // 0x6c	
+private:
+	[[maybe_unused]] uint8_t __pad006d[0x3]; // 0x6d
+public:
+	// MNetworkEnable
+	int32_t soundscapeEntityListIndex; // 0x70	
+	// MNetworkEnable
+	uint32_t soundEventHash; // 0x74	
+};
+static_assert(sizeof(audioparams_t) == 0x78, "Class didn't match expected size");
+
+// Size: 0x180
+class CPlayer_CameraServices : public CPlayerPawnComponent
+{
+public:
+	// MNetworkEnable
+	uint32_t m_iFOV; // 0x40
+	// MNetworkEnable
+	uint32_t m_iFOVStart; // 0x44
+	// MNetworkEnable
+	GameTime_t m_flFOVTime; // 0x48
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerExclusive"
+	float m_flFOVRate; // 0x4c
+	// MNetworkEnable
+	// MNetworkEncoder
+	QAngle m_vecCsViewPunchAngle; // 0x50
+	// MNetworkEnable
+	GameTick_t m_nCsViewPunchAngleTick; // 0x5c
+	// MNetworkEnable
+	float m_flCsViewPunchAngleTickRatio; // 0x60
+	// MNetworkEnable
+	CHandle< CBaseEntity > m_hZoomOwner; // 0x64
+	// MNetworkEnable
+	fogplayerparams_t m_PlayerFog; // 0x68
+	// MNetworkEnable
+	CHandle< CColorCorrection > m_hColorCorrectionCtrl; // 0xa8
+	// MNetworkEnable
+	CHandle< CBaseEntity > m_hViewEntity; // 0xac
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerAndObserversExclusive"
+	CHandle< CTonemapController2 > m_hTonemapController; // 0xb0
+	uint8_t __pad00b4[0x4]; // 0xb4
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerAndObserversExclusive"
+	audioparams_t m_audio; // 0xb8
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerAndObserversExclusive"
+	CNetworkUtlVectorBase< CHandle< CBaseToggle > > m_PostProcessingVolumes; // 0x130 CNetworkUtlVectorBase< CHandle< CPostProcessingVolume > >
+	float m_flOldPlayerZ; // 0x148
+	float m_flOldPlayerViewOffsetZ; // 0x14c
+	uint8_t __pad0150[0x18]; // 0x150
+	CUtlVector< CHandle< CBaseEntity > > m_hTriggerSoundscapeList; // 0x168 CUtlVector< CHandle< CEnvSoundscapeTriggerable > >
+};
+static_assert(sizeof(CPlayer_CameraServices) == 0x180, "Class didn't match expected size");
+
+// Size: 0x48
+struct ViewAngleServerChange_t
+{
+public:
+	uint8_t __pad0000[0x30]; // 0x0
+	// MNetworkEnable
+	FixAngleSet_t nType; // 0x30
+	uint8_t __pad0031[0x3]; // 0x31
+	// MNetworkEnable
+	// MNetworkEncoder
+	QAngle qAngle; // 0x34
+	// MNetworkEnable
+	uint32_t nIndex; // 0x40
+	uint8_t __pad0044[0x4]; // 0x44
+};
+static_assert(sizeof(ViewAngleServerChange_t) == 0x48, "Class didn't match expected size");
+
+// Size: 0x90
+struct sky3dparams_t
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkEnable
+	int16_t scale; // 0x8
+	uint8_t __pad000a[0x2]; // 0xa
+	// MNetworkEnable
+	// MNetworkEncoder
+	Vector origin; // 0xc
+	// MNetworkEnable
+	bool bClip3DSkyBoxNearToWorldFar; // 0x18
+	uint8_t __pad0019[0x3]; // 0x19
+	// MNetworkEnable
+	float flClip3DSkyBoxNearToWorldFarOffset; // 0x1c
+	// MNetworkEnable
+	fogparams_t fog; // 0x20
+	// MNetworkEnable
+	WorldGroupId_t m_nWorldGroupID; // 0x88
+	uint8_t __pad008c[0x4]; // 0x8c
+};
+static_assert(sizeof(sky3dparams_t) == 0x90, "Class didn't match expected size");
+
+// Size: 0x60
+class CAI_Expresser
+{
+public:
+	uint8_t __pad0000[0x38]; // 0x0
+	GameTime_t m_flStopTalkTime; // 0x38
+	GameTime_t m_flStopTalkTimeWithoutDelay; // 0x3c
+	GameTime_t m_flBlockedTalkTime; // 0x40
+	int32_t m_voicePitch; // 0x44
+	GameTime_t m_flLastTimeAcceptedSpeak; // 0x48
+	bool m_bAllowSpeakingInterrupts; // 0x4c
+	bool m_bConsiderSceneInvolvementAsSpeech; // 0x4d
+	uint8_t __pad004e[0x2]; // 0x4e
+	int32_t m_nLastSpokenPriority; // 0x50
+	uint8_t __pad0054[0x4]; // 0x54
+	CBaseFlex* m_pOuter; // 0x58
+};
+static_assert(sizeof(CAI_Expresser) == 0x60, "Class didn't match expected size");
+
+class CPlayer_MovementServices;
+// Size: 0xbf8
+class CBasePlayerPawn : public CBaseCombatCharacter
+{
+public:
+	// MNetworkEnable
+	CPlayer_WeaponServices* m_pWeaponServices; // 0xa78
+	// MNetworkEnable
+	CPlayer_ItemServices* m_pItemServices; // 0xa80
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerExclusive"
+	CPlayer_AutoaimServices* m_pAutoaimServices; // 0xa88
+	// MNetworkEnable
+	CPlayer_ObserverServices* m_pObserverServices; // 0xa90
+	// MNetworkEnable
+	CPlayer_WaterServices* m_pWaterServices; // 0xa98
+	// MNetworkEnable
+	CPlayer_UseServices* m_pUseServices; // 0xaa0
+	// MNetworkEnable
+	CPlayer_FlashlightServices* m_pFlashlightServices; // 0xaa8
+	// MNetworkEnable
+	CPlayer_CameraServices* m_pCameraServices; // 0xab0
+	// MNetworkEnable
+	CPlayer_MovementServices* m_pMovementServices; // 0xab8
+	uint8_t __pad0ac0[0x8]; // 0xac0
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerExclusive"
+	CUtlVectorEmbeddedNetworkVar< ViewAngleServerChange_t > m_ServerViewAngleChanges; // 0xac8
+	uint32_t m_nHighestGeneratedServerViewAngleChangeIndex; // 0xb18
+	QAngle v_angle; // 0xb1c
+	QAngle v_anglePrevious; // 0xb28
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerExclusive"
+	uint32_t m_iHideHUD; // 0xb34
+	// MNetworkEnable
+	// MNetworkUserGroup "LocalPlayerExclusive"
+	sky3dparams_t m_skybox3d; // 0xb38
+	GameTime_t m_fTimeLastHurt; // 0xbc8
+	// MNetworkEnable
+	GameTime_t m_flDeathTime; // 0xbcc
+	GameTime_t m_fNextSuicideTime; // 0xbd0
+	bool m_fInitHUD; // 0xbd4
+	uint8_t __pad0bd5[0x3]; // 0xbd5
+	CAI_Expresser* m_pExpresser; // 0xbd8
+	// MNetworkEnable
+	CHandle< CBasePlayerController > m_hController; // 0xbe0
+	uint8_t __pad0be4[0x4]; // 0xbe4
+	float m_fHltvReplayDelay; // 0xbe8
+	float m_fHltvReplayEnd; // 0xbec
+	CEntityIndex m_iHltvReplayEntity; // 0xbf0
+};
+static_assert(sizeof(CBasePlayerPawn) == 0xbf8, "Class didn't match expected size");
+
+// Size: 0x20
+struct locksound_t
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	CUtlSymbolLarge sLockedSound; // 0x8
+	CUtlSymbolLarge sUnlockedSound; // 0x10
+	GameTime_t flwaitSound; // 0x18
+};
+static_assert(sizeof(locksound_t) == 0x20, "Class didn't match expected size");
+
+// Size: 0x8c8
+class CBaseButton : public CBaseToggle
+{
+public:
+	QAngle m_angMoveEntitySpace; // 0x780
+	bool m_fStayPushed; // 0x78c
+	bool m_fRotating; // 0x78d
+	uint8_t __pad078e[0x2]; // 0x78e
+	locksound_t m_ls; // 0x790
+	CUtlSymbolLarge m_sUseSound; // 0x7b0
+	CUtlSymbolLarge m_sLockedSound; // 0x7b8
+	CUtlSymbolLarge m_sUnlockedSound; // 0x7c0
+	bool m_bLocked; // 0x7c8
+	bool m_bDisabled; // 0x7c9
+	uint8_t __pad07ca[0x2]; // 0x7ca
+	GameTime_t m_flUseLockedTime; // 0x7cc
+	bool m_bSolidBsp; // 0x7d0
+	uint8_t __pad07d1[0x7]; // 0x7d1
+	CEntityIOOutput m_OnDamaged; // 0x7d8
+	CEntityIOOutput m_OnPressed; // 0x800
+	CEntityIOOutput m_OnUseLocked; // 0x828
+	CEntityIOOutput m_OnIn; // 0x850
+	CEntityIOOutput m_OnOut; // 0x878
+	int32_t m_nState; // 0x8a0
+	CEntityHandle m_hConstraint; // 0x8a4
+	CEntityHandle m_hConstraintParent; // 0x8a8
+	bool m_bForceNpcExclude; // 0x8ac
+	uint8_t __pad08ad[0x3]; // 0x8ad
+	CUtlSymbolLarge m_sGlowEntity; // 0x8b0
+	// MNetworkEnable
+	CHandle< CBaseModelEntity > m_glowEntity; // 0x8b8
+	// MNetworkEnable
+	bool m_usable; // 0x8bc
+	uint8_t __pad08bd[0x3]; // 0x8bd
+	// MNetworkEnable
+	CUtlSymbolLarge m_szDisplayText; // 0x8c0
+};
 
 #endif // CS2_DATATYPES_H

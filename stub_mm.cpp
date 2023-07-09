@@ -51,7 +51,7 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 
 	// windows
 	char *serverbin = "../../csgo/bin/win64/server.dll";
-	char* clientbin = "../../csgo/bin/win64/client.dll";
+	// PlayerSlotToPlayerController
 	{
 		char *sig = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
 		char *mask = "xxxxxxxxx....xxxxx";
@@ -60,6 +60,17 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 			return false;
 		}
 	}
+	
+	// CEntityInstance_entindex
+	{
+		char *sig = "\x40\x53\x48\x83\xEC\x20\x4C\x8B\x41\x10\x48\x8B\xDA";
+		char *mask = "xxxxxxxxxxxxx";
+		if (!(CEntityInstance_entindex = (CEntityInstance_entindex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+	}
+	
 	{
 		char *sig = "\x48\x8B\xC4\x48\x89\x48\x08\x55\x53\x56\x57\x41\x54\x41\x56\x41";
 		char *mask = "xxxxxxxxxxxxxxxx";
@@ -144,6 +155,18 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 		CCSPP_GetMaxSpeed_hook = subhook_new((void*)CCSPP_GetMaxSpeed, Hook_CCSPP_GetMaxSpeed, SUBHOOK_64BIT_OFFSET);
 		subhook_install(CCSPP_GetMaxSpeed_hook);
 	}
+	
+	{
+		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x56\x57\x41\x56\x48\x83\xEC\x40\x4D";
+		char *mask = "xxxxxxxxxxxxxxxxxxx";
+		if (!(CreateEntity = (CreateEntity_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		CreateEntity_hook = subhook_new((void *)CreateEntity, Hook_CreateEntity, SUBHOOK_64BIT_OFFSET);
+		subhook_install(CreateEntity_hook);
+	}
+	
 	return true;
 }
 
@@ -157,6 +180,15 @@ bool StubPlugin::Unload(char *error, size_t maxlen)
 	
 	subhook_remove(CCSPP_PostThink_hook);
 	subhook_free(CCSPP_PostThink_hook);
+	
+	subhook_remove(CCSP_MS__CheckJumpButton_hook);
+	subhook_free(CCSP_MS__CheckJumpButton_hook);
+	
+	subhook_remove(CCSP_MS__WalkMove_hook);
+	subhook_free(CCSP_MS__WalkMove_hook);
+	
+	subhook_remove(CreateEntity_hook);
+	subhook_free(CreateEntity_hook);
 	
 	return true;
 }
@@ -177,6 +209,28 @@ void DoPrintCenter(CCSPlayerPawn* pawn, const char* fmt, ...)
 	PrintCenter_Server(buffer);
 }
 
+internal CEntityIndex GetPawnControllerEntIndex(CBasePlayerPawn *pawn)
+{
+	CEntityIndex result = -1;
+	if (pawn->m_hController.m_Index != 0xffffffff)
+	{
+		CEntityIndex result = pawn->m_hController.m_Index & 0x3fff;
+	}
+	return result;
+}
+
+internal CBasePlayerController *GetPawnController(CBasePlayerPawn *pawn)
+{
+	CBasePlayerController *result = NULL;
+	CEntityIndex index = GetPawnControllerEntIndex(pawn);
+	// TODO: what is maxplayers?
+	if (index.Get() > 0)
+	{
+		result = PlayerSlotToPlayerController(CPlayerSlot(index.Get() - 1));
+	}
+	return result;
+}
+
 internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 {
 	subhook_remove(CCSPP_PostThink_hook);
@@ -184,6 +238,13 @@ internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 	gpGlobals = engine->GetServerGlobals();
 	if (gBEnableJumpDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
 	gpPawn = this_;
+	
+	CEntityIndex entindex = -1;
+	CEntityInstance_entindex(this_, &entindex);
+	
+	CEntityIndex index = GetPawnControllerEntIndex(this_);
+	CBasePlayerController *controller = GetPawnController(this_);
+	
 	subhook_install(CCSPP_PostThink_hook);
 }
 
@@ -298,6 +359,21 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed)
 {
 	return 250.0f * g_RealVelPreMod;
+}
+
+internal CREATEENTITY(Hook_CreateEntity)
+{
+	subhook_remove(CreateEntity_hook);
+	CBaseEntity *result = CreateEntity(this_, a2, class_, memory, zero, a6, a7, a8);
+	
+	if (result && strcmp(result->m_pEntity->m_designerName.String(), "func_button") == 0)
+	{
+		CBaseButton *button = (CBaseButton *)result;
+		button = button;
+	}
+	
+	subhook_install(CreateEntity_hook);
+	return result;
 }
 
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)

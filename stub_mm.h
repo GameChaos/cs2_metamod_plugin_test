@@ -59,6 +59,14 @@ uintptr_t FindPattern(void* start, size_t maxScanBytes, char* pattern, char* ign
 typedef CBasePlayerController* PlayerSlotToPlayerController_t(CPlayerSlot slot);
 PlayerSlotToPlayerController_t* PlayerSlotToPlayerController = NULL;
 
+typedef void CEntityInstance_entindex_t(CEntityInstance *this_, CEntityIndex *out);
+CEntityInstance_entindex_t *CEntityInstance_entindex = NULL;
+
+#define CREATEENTITY(name) CBaseEntity *name(void *this_, u32 a2, void *class_, void *memory, s32 zero, u32 a6, u32 a7, bool a8)
+typedef CREATEENTITY(CreateEntity_t);
+CreateEntity_t *CreateEntity = NULL;
+subhook_t CreateEntity_hook;
+internal CREATEENTITY(Hook_CreateEntity);
 
 #define CBASEPLAYERPAWN_POSTTHINK(name) void name(CCSPlayerPawn *this_)
 typedef CBASEPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);

@@ -29,10 +29,6 @@ static uintptr_t SigScanMemory(void *start, size_t maxScanBytes, char *pattern, 
 		while (memory[i + matches] == pattern[matches] || ignorePattern[matches] != 'x')
 		{
 			matches++;
-			if (matches == 14)
-			{
-				matches = matches;
-			}
 			if (matches == patternLen)
 			{
 				return (uintptr_t)(memory + i);
