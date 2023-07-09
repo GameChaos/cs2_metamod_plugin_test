@@ -13,6 +13,7 @@ class CBaseFilter;
 #include "utlsymbollarge.h"
 #include "ihandleentity.h"
 #include "vscript/ivscript.h"
+//#include "../game/server/recipientfilter.h"
 
 enum TakeDamageFlags_t : uint32_t
 {
@@ -452,9 +453,9 @@ public:
 	// MNetworkEnable
 	uint8_t m_nCollisionFunctionMask; // 0x2b
 };
+
 static_assert(sizeof(VPhysicsCollisionAttribute_t) == 0x30, "Class didn't match expected size");
 
-#pragma pack(push, 1)
 // Size: 0xb0
 class CCollisionProperty
 {
@@ -503,7 +504,6 @@ public:
 	// MNetworkEnable
 	float m_flCapsuleRadius; // 0xac
 };
-#pragma pack(pop)
 static_assert(sizeof(CCollisionProperty) == 0xb0, "Class didn't match expected size");
 
 // Size: 0x4b0
