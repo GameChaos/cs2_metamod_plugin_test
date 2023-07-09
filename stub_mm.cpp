@@ -44,13 +44,13 @@ float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ign
 
 uintptr_t FindPattern(void *start, size_t maxScanBytes, char *pattern, char *ignorePattern);
 
-typedef CBaseEntity *PlayerSlotToPlayerController_t(CPlayerSlot slot);
+typedef CBasePlayerController *PlayerSlotToPlayerController_t(CPlayerSlot slot);
 PlayerSlotToPlayerController_t *PlayerSlotToPlayerController = NULL;
 
 typedef void CEntityInstance_entindex_t(CEntityInstance *this_, CEntityIndex *out);
 CEntityInstance_entindex_t *CEntityInstance_entindex = NULL;
 
-#define CBASEPLAYERPAWN_POSTTHINK(name) void name(CBaseEntity *this_)
+#define CBASEPLAYERPAWN_POSTTHINK(name) void name(CBasePlayerPawn *this_)
 typedef CBASEPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
 CCSPP_PostThink_t *CCSPP_PostThink = NULL;
 subhook_t CCSPP_PostThink_hook;
@@ -184,6 +184,24 @@ internal b32 IsButtonDown(CInButtonState buttons, InputBitMask_t button)
 	return result;
 }
 
+internal CEntityIndex GetPawnControllerEntIndex(CBasePlayerPawn *pawn)
+{
+	CEntityIndex result = pawn->m_hController.m_Index & 0x3fff;
+	return result;
+}
+
+internal CBasePlayerController *GetPawnController(CBasePlayerPawn *pawn)
+{
+	CBasePlayerController *result = NULL;
+	CEntityIndex index = GetPawnControllerEntIndex(pawn);
+	// TODO: what is maxplayers?
+	if (index.Get() > 0)
+	{
+		result = PlayerSlotToPlayerController(CPlayerSlot(index.Get() - 1));
+	}
+	return result;
+}
+
 internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 {
 	subhook_remove(CCSPP_PostThink_hook);
@@ -191,6 +209,9 @@ internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 	
 	CEntityIndex entindex = -1;
 	CEntityInstance_entindex(this_, &entindex);
+	
+	CEntityIndex index = GetPawnControllerEntIndex(this_);
+	CBasePlayerController *controller = GetPawnController(this_);
 	
 	if (this_->m_fFlags & FL_ONGROUND)
 	{
@@ -246,7 +267,7 @@ internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 
 internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
-	CBaseEntity *test = PlayerSlotToPlayerController(slot);
+	CBasePlayerController *test = PlayerSlotToPlayerController(slot);
 	engine->ClientCommand(slot, "say poopee");
 	gpGlobals = engine->GetServerGlobals();
 	META_CONPRINTF("player slot: %i\n", slot.Get());

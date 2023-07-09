@@ -13,18 +13,6 @@ public:
 };
 static_assert(sizeof(CInButtonState) == 0x20, "Class didn't match expected size");
 
-// Size: 0x40
-class CPlayerPawnComponent
-{
-public:
-	uint8_t __pad0000[0x8]; // 0x0
-	// MNetworkDisable
-	// MNetworkChangeAccessorFieldPathIndex
-	CNetworkVarChainer __m_pChainEntity; // 0x8
-	uint8_t __pad0030[0x10]; // 0x0
-};
-static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
-
 // Size: 0x1d0
 class CPlayer_MovementServices : public CPlayerPawnComponent
 {
