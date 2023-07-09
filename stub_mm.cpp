@@ -186,7 +186,11 @@ internal b32 IsButtonDown(CInButtonState buttons, InputBitMask_t button)
 
 internal CEntityIndex GetPawnControllerEntIndex(CBasePlayerPawn *pawn)
 {
-	CEntityIndex result = pawn->m_hController.m_Index & 0x3fff;
+	CEntityIndex result = -1;
+	if (pawn->m_hController.m_Index != 0xffffffff)
+	{
+		CEntityIndex result = pawn->m_hController.m_Index & 0x3fff;
+	}
 	return result;
 }
 
