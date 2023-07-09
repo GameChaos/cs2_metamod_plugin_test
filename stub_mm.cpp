@@ -36,7 +36,7 @@ ISource2GameClients *gameclients = NULL;
 ISource2Server *gamedll = NULL;
 ISource2ServerConfig *serverconfig = NULL;
 IVEngineServer2 *engine = NULL;
-CGlobalVars* gpGlobals = NULL;
+CGlobalVars *gpGlobals = NULL;
 
 void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick);
 void Hook_ClientFullyConnect(CPlayerSlot slot);
@@ -46,6 +46,9 @@ uintptr_t FindPattern(void *start, size_t maxScanBytes, char *pattern, char *ign
 
 typedef CBaseEntity *PlayerSlotToPlayerController_t(CPlayerSlot slot);
 PlayerSlotToPlayerController_t *PlayerSlotToPlayerController = NULL;
+
+typedef void CEntityInstance_entindex_t(CEntityInstance *this_, CEntityIndex *out);
+CEntityInstance_entindex_t *CEntityInstance_entindex = NULL;
 
 #define CBASEPLAYERPAWN_POSTTHINK(name) void name(CBaseEntity *this_)
 typedef CBASEPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
@@ -65,6 +68,12 @@ CCSP_MS__WalkMove_t *CCSP_MS__WalkMove = NULL;
 subhook_t CCSP_MS__WalkMove_hook;
 internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove);
 
+#define CREATEENTITY(name) CBaseEntity *name(void *this_, u32 a2, void *class_, void *memory, s32 zero, u32 a6, u32 a7, bool a8)
+typedef CREATEENTITY(CreateEntity_t);
+CreateEntity_t *CreateEntity = NULL;
+subhook_t CreateEntity_hook;
+internal CREATEENTITY(Hook_CreateEntity);
+
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
@@ -81,10 +90,21 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	
 	// windows
 	char *serverbin = "../../csgo/bin/win64/server.dll";
+	// PlayerSlotToPlayerController
 	{
 		char *sig = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
 		char *mask = "xxxxxxxxx....xxxxx";
 		if (!(PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+	}
+	
+	// CEntityInstance_entindex
+	{
+		char *sig = "\x40\x53\x48\x83\xEC\x20\x4C\x8B\x41\x10\x48\x8B\xDA";
+		char *mask = "xxxxxxxxxxxxx";
+		if (!(CEntityInstance_entindex = (CEntityInstance_entindex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
 			return false;
 		}
@@ -123,6 +143,17 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 		subhook_install(CCSP_MS__WalkMove_hook);
 	}
 	
+	{
+		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x56\x57\x41\x56\x48\x83\xEC\x40\x4D";
+		char *mask = "xxxxxxxxxxxxxxxxxxx";
+		if (!(CreateEntity = (CreateEntity_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		CreateEntity_hook = subhook_new((void *)CreateEntity, Hook_CreateEntity, SUBHOOK_64BIT_OFFSET);
+		subhook_install(CreateEntity_hook);
+	}
+	
 	return true;
 }
 
@@ -134,6 +165,15 @@ bool StubPlugin::Unload(char *error, size_t maxlen)
 	
 	subhook_remove(CCSPP_PostThink_hook);
 	subhook_free(CCSPP_PostThink_hook);
+	
+	subhook_remove(CCSP_MS__CheckJumpButton_hook);
+	subhook_free(CCSP_MS__CheckJumpButton_hook);
+	
+	subhook_remove(CCSP_MS__WalkMove_hook);
+	subhook_free(CCSP_MS__WalkMove_hook);
+	
+	subhook_remove(CreateEntity_hook);
+	subhook_free(CreateEntity_hook);
 	
 	return true;
 }
@@ -148,6 +188,10 @@ internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 {
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
+	
+	CEntityIndex entindex = -1;
+	CEntityInstance_entindex(this_, &entindex);
+	
 	if (this_->m_fFlags & FL_ONGROUND)
 	{
 		// this_->m_vecAbsVelocity.z = 320.0f;
@@ -162,7 +206,7 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 	CCSP_MS__CheckJumpButton(this_, mv);
 	gpGlobals = engine->GetServerGlobals();
 	
-	META_CONPRINTF("[%i (%.6f)]m_flJumpUntil %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil);
+	// META_CONPRINTF("[%i (%.6f)]m_flJumpUntil %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil);
 	subhook_install(CCSP_MS__CheckJumpButton_hook);
 }
 
@@ -172,20 +216,27 @@ internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 	CCSP_MS__WalkMove(this_, mv);
 	gpGlobals = engine->GetServerGlobals();
 	
-	// speed cap
-	f32 speed = mv->m_vecVelocity.Length2D();
-	if (speed > 380.0f)
-	{
-		mv->m_vecVelocity *= 380.0f / speed;
-	}
-	
 	if (IsButtonDown(this_->m_nButtons, IN_FORWARD))
 	{
 		
 	}
 	
-	// META_CONPRINTF("[%i (%.6f)]m_flJumpUntil %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil);
 	subhook_install(CCSP_MS__WalkMove_hook);
+}
+
+internal CREATEENTITY(Hook_CreateEntity)
+{
+	subhook_remove(CreateEntity_hook);
+	CBaseEntity *result = CreateEntity(this_, a2, class_, memory, zero, a6, a7, a8);
+	
+	if (result && strcmp(result->m_pEntity->m_designerName.String(), "func_button") == 0)
+	{
+		CBaseButton *button = (CBaseButton *)result;
+		button = button;
+	}
+	
+	subhook_install(CreateEntity_hook);
+	return result;
 }
 
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
