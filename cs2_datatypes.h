@@ -12,7 +12,8 @@ class CBaseFilter;
 #include "utlsymbollarge.h"
 #include "ihandleentity.h"
 #include "vscript/ivscript.h"
-//#include "../game/server/recipientfilter.h"
+
+class CBasePlayerPawn;
 
 enum TakeDamageFlags_t : uint32_t
 {
@@ -328,6 +329,19 @@ public:
 	uint8_t __pad0022[0x6];
 };
 static_assert(sizeof(CNetworkVarChainer) == 0x28, "Class didn't match expected size");
+
+// Size: 0x40
+class CPlayerPawnComponent
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkDisable
+	// MNetworkChangeAccessorFieldPathIndex
+	CNetworkVarChainer __m_pChainEntity; // 0x8
+	CBasePlayerPawn* pawn;
+	uint8_t __pad0030[0x6]; // 0x0
+};
+static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
 
 // Size: 0x78
 class CEntityIdentity
@@ -835,7 +849,6 @@ public:
 };
 static_assert(sizeof(CBaseEntity) == 0x4b0, "Class didn't match expected size");
 
-class CBasePlayerPawn;
 // Size: 0x690
 class CBasePlayerController : public CBaseEntity
 {
@@ -1186,18 +1199,6 @@ public:
 	CUtlSymbolLarge m_sMaster; // 0x778
 };
 static_assert(sizeof(CBaseToggle) == 0x780, "Class didn't match expected size");
-
-// Size: 0x40
-class CPlayerPawnComponent
-{
-public:
-	uint8_t __pad0000[0x8]; // 0x0
-	// MNetworkDisable
-	// MNetworkChangeAccessorFieldPathIndex
-	CNetworkVarChainer __m_pChainEntity; // 0x8
-	uint8_t __pad0030[0x10]; // 0x0
-};
-static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
 
 // Size: 0xb0
 class CPlayer_WeaponServices : public CPlayerPawnComponent

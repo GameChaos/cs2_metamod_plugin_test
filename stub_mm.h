@@ -56,76 +56,8 @@ void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args);
 
 uintptr_t FindPattern(void* start, size_t maxScanBytes, char* pattern, char* ignorePattern);
 
-typedef CBasePlayerController* PlayerSlotToPlayerController_t(CPlayerSlot slot);
-PlayerSlotToPlayerController_t* PlayerSlotToPlayerController = NULL;
-
-typedef void CEntityInstance_entindex_t(CEntityInstance *this_, CEntityIndex *out);
-CEntityInstance_entindex_t *CEntityInstance_entindex = NULL;
-
-#define CREATEENTITY(name) CBaseEntity *name(void *this_, u32 a2, void *class_, void *memory, s32 zero, u32 a6, u32 a7, bool a8)
-typedef CREATEENTITY(CreateEntity_t);
-CreateEntity_t *CreateEntity = NULL;
-subhook_t CreateEntity_hook;
-internal CREATEENTITY(Hook_CreateEntity);
-
-#define CBASEPLAYERPAWN_POSTTHINK(name) void name(CCSPlayerPawn *this_)
-typedef CBASEPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
-CCSPP_PostThink_t* CCSPP_PostThink = NULL;
-subhook_t CCSPP_PostThink_hook;
-internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink);
-
-#define CCSP_MS__CHECKJUMPBUTTON(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv)
-typedef CCSP_MS__CHECKJUMPBUTTON(CCSP_MS__CheckJumpButton_t);
-CCSP_MS__CheckJumpButton_t* CCSP_MS__CheckJumpButton = NULL;
-subhook_t CCSP_MS__CheckJumpButton_hook;
-internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton);
-
-#define CCSP_MS__WALKMOVE(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv)
-typedef CCSP_MS__WALKMOVE(CCSP_MS__WalkMove_t);
-CCSP_MS__WalkMove_t* CCSP_MS__WalkMove = NULL;
-subhook_t CCSP_MS__WalkMove_hook;
-internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove);
-
-#define CCSP_MS__ONJUMP(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv)
-typedef CCSP_MS__ONJUMP(CCSP_MS__OnJump_t);
-CCSP_MS__OnJump_t* CCSP_MS__OnJump = NULL;
-subhook_t CCSP_MS__OnJump_hook;
-internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump);
-
-#define CCSGC__GETTICKINTERVAL(name) float name(void *this_)
-typedef CCSGC__GETTICKINTERVAL(CCSGC__GetTickInterval_t);
-CCSGC__GetTickInterval_t* CCSGC__GetTickInterval = NULL;
-subhook_t CCSGC__GetTickInterval_Hook;
-internal CCSGC__GETTICKINTERVAL(Hook_CCSGC__GetTickInterval);
-
-#define PRINTCENTER(name) void name(void *pawn, int msg_dest, const char* msg_name, const char* param1, const char* param2, const char* param3, const char* param4)
-typedef PRINTCENTER(PrintCenter_t);
-PrintCenter_t* PrintCenter = NULL;
-subhook_t PrintCenter_Hook;
-internal PRINTCENTER(Hook_PrintCenter);
-
-#define SCRIPTPRINTCENTER(name) void name(void* unk)
-typedef SCRIPTPRINTCENTER(ScriptPrintCenter_t);
-ScriptPrintCenter_t* PrintCenter_Server = NULL;
-subhook_t PrintCenter_Server_Hook;
-internal SCRIPTPRINTCENTER(Hook_PrintCenter_Server);
-
-
-#define CCSP_MS__PROCESSMOVEMENT(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv)
-typedef CCSP_MS__PROCESSMOVEMENT(CCSP_MS__ProcessMovement_t);
-CCSP_MS__ProcessMovement_t* CCSP_MS__ProcessMovement = NULL;
-subhook_t CCSP_MS__ProcessMovement_hook;
-internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement);
-
-#define CCSPP_GETMAXSPEED(name) float name(CCSPlayerPawn* this_)
-typedef CCSPP_GETMAXSPEED(CCSPP_GetMaxSpeed_t);
-CCSPP_GetMaxSpeed_t* CCSPP_GetMaxSpeed = NULL;
-subhook_t CCSPP_GetMaxSpeed_hook;
-internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed);
-
-CCSPlayerPawn* gpPawn = NULL;
+CBasePlayerPawn* gpPawn = NULL; // To be replaced so it works for more than one person
 extern StubPlugin g_StubPlugin;
-void DoPrintCenter(CCSPlayerPawn *pawn, const char* fmt, ...);
 PLUGIN_GLOBALVARS();
 
 #endif //_INCLUDE_METAMOD_SOURCE_STUB_PLUGIN_H_

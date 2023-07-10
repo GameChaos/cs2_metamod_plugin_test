@@ -2293,6 +2293,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <LanguageStandard>Default</LanguageStandard>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(HL2SDKDOTA)\lib\public\win64\interfaces.lib;$(HL2SDKDOTA)\lib\public\win64\tier0.lib;$(HL2SDKDOTA)\lib\public\win64\tier1.lib;$(HL2SDKDOTA)\lib\public\win64\mathlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -2430,9 +2431,6 @@
     <ClCompile Include="..\subhook\subhook.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release - CS2|x64'">SUBHOOK_STATIC;META_IS_SOURCE2=1;WIN32;NDEBUG;_WINDOWS;_USRDLL;STUB_MM_EXPORTS;COMPILER_MSVC;COMPILER_MSVC64;SOURCE_ENGINE=28;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\stub_mm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

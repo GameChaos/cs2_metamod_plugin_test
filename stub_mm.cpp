@@ -18,21 +18,20 @@
 #include <stdio.h>
 #include "stub_mm.h"
 
-SH_DECL_HOOK3_void(ISource2Server, GameFrame, SH_NOATTRIB, false, bool, bool, bool);
-SH_DECL_HOOK1_void(ISource2GameClients, ClientFullyConnect, SH_NOATTRIB, false, CPlayerSlot);
-SH_DECL_HOOK5(ISource2GameClients, ProcessUsercmds, SH_NOATTRIB, false, float, CPlayerSlot, bf_read *, int, bool, bool);
-SH_DECL_HOOK2_void(ISource2GameClients, ClientCommand, SH_NOATTRIB, false, CPlayerSlot, const CCommand &);
 StubPlugin g_StubPlugin;
 ISource2GameClients *gameclients = NULL;
 ISource2Server *gamedll = NULL;
 ISource2ServerConfig *serverconfig = NULL;
 IVEngineServer2 *engine = NULL;
-CGlobalVars* gpGlobals = NULL;
-#include "kztimer.h"
-PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
+CGlobalVars *gpGlobals = NULL;
 
-bool gBEnableJumpDebug = false;
-f32 gF_Tickrate = 64.0f;
+#include "hooks.cpp"
+bool enableDebug = false;
+f32 tickrate = 64.0f;
+#include "util.cpp"
+#include "kztimer.cpp"
+
+PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
@@ -43,170 +42,15 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	GET_V_IFACE_CURRENT(GetServerFactory, serverconfig, ISource2ServerConfig, INTERFACEVERSION_SERVERCONFIG);
 	GET_V_IFACE_CURRENT(GetServerFactory, gameclients, ISource2GameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
 	
-	SH_ADD_HOOK(ISource2Server, GameFrame, gamedll, &Hook_GameFrame, false);
-	SH_ADD_HOOK(ISource2GameClients, ClientFullyConnect, gameclients, SH_STATIC(Hook_ClientFullyConnect), false);
-	SH_ADD_HOOK(ISource2GameClients, ProcessUsercmds, gameclients, SH_STATIC(Hook_ProcessUsercmds), false);
-	SH_ADD_HOOK(ISource2GameClients, ClientCommand, gameclients, SH_STATIC(Hook_ClientCommand), false);
-
-
-	// windows
-	char *serverbin = "../../csgo/bin/win64/server.dll";
-	// PlayerSlotToPlayerController
-	{
-		char *sig = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
-		char *mask = "xxxxxxxxx....xxxxx";
-		if (!(PlayerSlotToPlayerController = (PlayerSlotToPlayerController_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-	}
-	
-	// CEntityInstance_entindex
-	{
-		char *sig = "\x40\x53\x48\x83\xEC\x20\x4C\x8B\x41\x10\x48\x8B\xDA";
-		char *mask = "xxxxxxxxxxxxx";
-		if (!(CEntityInstance_entindex = (CEntityInstance_entindex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-	}
-	
-	{
-		char *sig = "\x48\x8B\xC4\x48\x89\x48\x08\x55\x53\x56\x57\x41\x54\x41\x56\x41";
-		char *mask = "xxxxxxxxxxxxxxxx";
-		if (!(CCSPP_PostThink = (CCSPP_PostThink_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSPP_PostThink_hook = subhook_new((void *)CCSPP_PostThink, Hook_CCSPP_PostThink, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSPP_PostThink_hook);
-	}
-	
-	{
-		char *sig = "\x48\x89\x5C\x24\x18\x56\x48\x83\xEC\x40\x48\x8B\xF2\x48";
-		char *mask = "xxxxxxxxxxxxxx";
-		if (!(CCSP_MS__CheckJumpButton = (CCSP_MS__CheckJumpButton_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSP_MS__CheckJumpButton_hook = subhook_new((void *)CCSP_MS__CheckJumpButton, Hook_CCSP_MS__CheckJumpButton, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSP_MS__CheckJumpButton_hook);
-	}
-	
-	{
-		char *sig = "\x40\x53\x57\x48\x81\xEC\xA8\x00\x00\x00\x48\x8B\xD9";
-		char *mask = "xxxxxxxxxxxxx";
-		if (!(CCSP_MS__OnJump = (CCSP_MS__OnJump_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSP_MS__OnJump_hook = subhook_new((void *)CCSP_MS__OnJump, Hook_CCSP_MS__OnJump, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSP_MS__OnJump_hook);
-	}
-
-	{
-		char* sig = "\xF3\x0F\x10\x05\x58\xA0\x7F\x00";
-		char* mask = "xxxxxxxx";
-		if (!(CCSGC__GetTickInterval = (CCSGC__GetTickInterval_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSGC__GetTickInterval_Hook = subhook_new((void*)CCSGC__GetTickInterval, Hook_CCSGC__GetTickInterval, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSGC__GetTickInterval_Hook);
-	}
-
-	{
-		char* sig = "\x48\x83\xEC\x38\x33\xC0\x48\x8B\xD1\x48\x89\x44\x24\x28\x45\x33\xC9\x45\x33\xC0\x48\x89\x44\x24\x20\x8D\x48\x04";
-		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-		if (!(PrintCenter_Server = (ScriptPrintCenter_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		PrintCenter_Server_Hook = subhook_new((void*)PrintCenter_Server, Hook_PrintCenter_Server, SUBHOOK_64BIT_OFFSET);
-		subhook_install(PrintCenter_Server_Hook);
-	}
-	{
-		char* sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x18\x48\x89\x7C\x24\x20\x41\x56\x48\x81\xEC\x90\x00\x00\x00";
-		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxx";
-		if (!(PrintCenter = (PrintCenter_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		PrintCenter_Hook = subhook_new((void*)PrintCenter, Hook_PrintCenter, SUBHOOK_64BIT_OFFSET);
-		subhook_install(PrintCenter_Hook);
-	}
-	{
-		char* sig = "\x40\x56\x57\x48\x81\xEC\xA8\x00\x00\x00\x48\x8B\xF9";
-		char* mask = "xxxxxxxxxxxxx";
-		if (!(CCSP_MS__ProcessMovement = (CCSP_MS__ProcessMovement_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSP_MS__ProcessMovement_hook = subhook_new((void*)CCSP_MS__ProcessMovement, Hook_CCSP_MS__ProcessMovement, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSP_MS__ProcessMovement_hook);
-	}
-	{
-		char* sig = "\x48\x89\x5C\x24\x10\x57\x48\x83\xEC\x30\x80\xB9\xC2\x02\x00\x00\x00";
-		char* mask = "xxxxxxxxxxxxxxxxx";
-		if (!(CCSPP_GetMaxSpeed = (CCSPP_GetMaxSpeed_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSPP_GetMaxSpeed_hook = subhook_new((void*)CCSPP_GetMaxSpeed, Hook_CCSPP_GetMaxSpeed, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSPP_GetMaxSpeed_hook);
-	}
-	
-	{
-		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x56\x57\x41\x56\x48\x83\xEC\x40\x4D";
-		char *mask = "xxxxxxxxxxxxxxxxxxx";
-		if (!(CreateEntity = (CreateEntity_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CreateEntity_hook = subhook_new((void *)CreateEntity, Hook_CreateEntity, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CreateEntity_hook);
-	}
-	
-	return true;
+	return Hooks_HookFunctions(error, maxlen);
 }
 
 
 bool StubPlugin::Unload(char *error, size_t maxlen)
 {
-	SH_REMOVE_HOOK(ISource2Server, GameFrame, gamedll, &Hook_GameFrame, false);
-	SH_REMOVE_HOOK(ISource2GameClients, ClientFullyConnect, gameclients, SH_STATIC(Hook_ClientFullyConnect), false);
-	SH_REMOVE_HOOK(ISource2GameClients, ProcessUsercmds, gameclients, SH_STATIC(Hook_ProcessUsercmds), false);
-	SH_REMOVE_HOOK(ISource2GameClients, ClientCommand, gameclients, SH_STATIC(Hook_ClientCommand), false);
-	
-	subhook_remove(CCSPP_PostThink_hook);
-	subhook_free(CCSPP_PostThink_hook);
-	
-	subhook_remove(CCSP_MS__CheckJumpButton_hook);
-	subhook_free(CCSP_MS__CheckJumpButton_hook);
-	
-	subhook_remove(CCSP_MS__WalkMove_hook);
-	subhook_free(CCSP_MS__WalkMove_hook);
-	
-	subhook_remove(CreateEntity_hook);
-	subhook_free(CreateEntity_hook);
+	Hooks_UnhookFunctions();
 	
 	return true;
-}
-
-void DoPrintCenter(CCSPlayerPawn* pawn, const char* fmt, ...)
-{
-	va_list ap;
-	char buffer[2048];
-
-	va_start(ap, fmt);
-	int len = vsnprintf(buffer, sizeof(buffer), fmt, ap);
-	if (len >= 2048)
-	{
-		len = 2047;
-		buffer[len] = '\0';
-	}
-	va_end(ap);
-	PrintCenter_Server(buffer);
 }
 
 internal CEntityIndex GetPawnControllerEntIndex(CBasePlayerPawn *pawn)
@@ -236,7 +80,7 @@ internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
 	gpGlobals = engine->GetServerGlobals();
-	if (gBEnableJumpDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
+	if (enableDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
 	gpPawn = this_;
 	
 	CEntityIndex entindex = -1;
@@ -253,9 +97,9 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 	subhook_remove(CCSP_MS__CheckJumpButton_hook);
 
 	gpGlobals = engine->GetServerGlobals();
-	//if (gBEnableJumpDebug)	META_CONPRINTF("(PRE) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
+	//if (enableDebug)	META_CONPRINTF("(PRE) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
 	CCSP_MS__CheckJumpButton(this_, mv);
-	//if (gBEnableJumpDebug)	META_CONPRINTF("(POST) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
+	//if (enableDebug)	META_CONPRINTF("(POST) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
 
 	subhook_install(CCSP_MS__CheckJumpButton_hook);
 }
@@ -273,7 +117,7 @@ internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
 {
 	subhook_remove(CCSP_MS__OnJump_hook);
-	float lastJumpUntil = this_->m_flJumpUntil;
+	f32 lastJumpUntil = this_->m_flJumpUntil;
 	CCSP_MS__OnJump(this_, mv);
 	f32 speed = mv->m_vecVelocity.Length2D();
 	if (speed > 380.0f && this_->m_flJumpUntil > lastJumpUntil)
@@ -296,19 +140,19 @@ internal void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args)
 	META_CONPRINTF("ClientCommand: %s\n", args.GetCommandString());
 	if (strcmp(args[0], "toggledebug") == 0)
 	{
-		gBEnableJumpDebug = !gBEnableJumpDebug;
-		DoPrintCenter(NULL, "gBEnableJumpDebug %s\n", gBEnableJumpDebug ? "on" : "off");
+		enableDebug = !enableDebug;
+		DoPrintCenter("enableDebug %s\n", enableDebug ? "on" : "off");
 		RETURN_META(MRES_SUPERCEDE);
 	}
 	else if (strcmp(args[0], "gettickrate") == 0)
 	{
-		META_CONPRINTF("Current tickrate: %f", gF_Tickrate);
+		META_CONPRINTF("Current tickrate: %f", tickrate);
 		RETURN_META(MRES_SUPERCEDE);
 	}
 	else if (strcmp(args[0], "settickrate") == 0 && args.ArgC() == 2)
 	{
-		gF_Tickrate = clamp(atof(args[1]), 10, 1000);
-		META_CONPRINTF("New tickrate: %f. Please change the map to apply the new tickrate.\n", gF_Tickrate);
+		tickrate = clamp(atof(args[1]), 10, 1000);
+		META_CONPRINTF("New tickrate: %f. Please change the map to apply the new tickrate.\n", tickrate);
 		RETURN_META(MRES_SUPERCEDE);
 	}
 	RETURN_META(MRES_IGNORED);
@@ -316,33 +160,14 @@ internal void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args)
 
 internal CCSGC__GETTICKINTERVAL(Hook_CCSGC__GetTickInterval)
 {
-	return clamp(1 / gF_Tickrate, 0.001, 0.1);
+	return clamp(1 / tickrate, 0.001, 0.1);
 }
-
-internal PRINTCENTER(Hook_PrintCenter)
-{
-	subhook_remove(PrintCenter_Hook);
-	//const char* newmsg = "Hello!";
-	PrintCenter(pawn, msg_dest, msg_name, param1, param2, param3, param4);
-	//if (gBEnableJumpDebug && msg_dest == 4) META_CONPRINTF("PrintCenter %x | Dest %i | Name %s %i %i %i %i\n", pawn, msg_dest, msg_name, param1, param2, param3, param4);
-	subhook_install(PrintCenter_Hook);
-}
-
-internal SCRIPTPRINTCENTER(Hook_PrintCenter_Server)
-{
-	subhook_remove(PrintCenter_Server_Hook);
-	//const char* newmsg = "Hello!";
-	PrintCenter_Server(unk);
-	//META_CONPRINTF("PrintCenter_Server %s", unk);
-	subhook_install(PrintCenter_Server_Hook);
-}
-
 
 internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 {
 	subhook_remove(CCSP_MS__ProcessMovement_hook);
 	CCSP_MS__ProcessMovement(this_, mv);
-	//if (gBEnableJumpDebug) META_CONPRINTF("%i %f\n", gpGlobals->tickcount, mv->m_vecVelocity.Length2D());
+	//if (enableDebug) META_CONPRINTF("%i %f\n", gpGlobals->tickcount, mv->m_vecVelocity.Length2D());
 	if (gpPawn != NULL && this_->pawn == gpPawn)
 	{
 		char buffer[1024] = "";
@@ -350,8 +175,8 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 		strcat(buffer, GetSpeedText(this_, mv));
 		strcat(buffer, "\n");
 		strcat(buffer, GetKeyText(this_, mv));
-		DoPrintCenter(NULL, buffer);
-		oldEyeAngles = mv->m_vecViewAngles;
+		DoPrintCenter(buffer);
+		UpdateOldEyeAngles(mv);
 	}
 	subhook_install(CCSP_MS__ProcessMovement_hook);
 }

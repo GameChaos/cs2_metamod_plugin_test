@@ -4,11 +4,11 @@
 
 #include <stdint.h>
 
-class CCSPlayerPawn : public CBaseEntity
+class CCSPlayerPawn : public CBasePlayerPawn
 {
 public:
-	char __unk0[3864];
-	bool m_bOldJumpPressed;
+	char __unk0[2000];
+	bool m_bOldJumpPressed; // 5064
 };
 
 // Size: 0x20
@@ -20,18 +20,6 @@ public:
 };
 static_assert(sizeof(CInButtonState) == 0x20, "Class didn't match expected size");
 
-// Size: 0x40
-class CPlayerPawnComponent
-{
-public:
-	uint8_t __pad0000[0x8]; // 0x0
-	// MNetworkDisable
-	// MNetworkChangeAccessorFieldPathIndex
-	CNetworkVarChainer __m_pChainEntity; // 0x8
-	CCSPlayerPawn* pawn;
-	uint8_t __pad0030[0x6]; // 0x0
-};
-static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
 
 // Size: 0x1d0
 class CPlayer_MovementServices : public CPlayerPawnComponent
@@ -219,71 +207,6 @@ public:
 	bool m_bSomethingWithGravity; // 0xd1 related to the new ShouldApplyGravity
 	uint8_t unknown7[0x2]; // 0xd2 Probably padding
 	Vector m_outWishVel; // 0xd4
-};
-
-// Size: 0x690
-class CBasePlayerController : public CBaseEntity
-{
-public:
-	uint64_t m_nInButtonsWhichAreToggles; // 0x4b8	
-	// MNetworkEnable
-	// MNetworkPriority "1"
-	// MNetworkUserGroup "LocalPlayerExclusive"
-	uint32_t m_nTickBase; // 0x4c0	
-private:
-	[[maybe_unused]] uint8_t __pad04c4[0x2c]; // 0x4c4
-public:
-	// MNetworkEnable
-	// MNetworkChangeCallback "OnPawnChanged"
-	CCSPlayerPawn* m_hPawn; // 0x4f0	
-	CSplitScreenSlot m_nSplitScreenSlot; // 0x4f4	
-	CHandle< CBasePlayerController > m_hSplitOwner; // 0x4f8	
-private:
-	[[maybe_unused]] uint8_t __pad04fc[0x4]; // 0x4fc
-public:
-	CUtlVector< CHandle< CBasePlayerController > > m_hSplitScreenPlayers; // 0x500	
-	bool m_bIsHLTV; // 0x518	
-private:
-	[[maybe_unused]] uint8_t __pad0519[0x3]; // 0x519
-public:
-	// MNetworkEnable
-	// MNetworkChangeCallback "OnConnectionStateChanged"
-	int m_iConnected; // 0x51c	
-	// MNetworkEnable
-	// MNetworkChangeCallback "OnPlayerControllerNameChanged"
-	char m_iszPlayerName[128]; // 0x520	
-	CUtlString m_szNetworkIDString; // 0x5a0	
-	float m_fLerpTime; // 0x5a8	
-	bool m_bLagCompensation; // 0x5ac	
-	bool m_bPredict; // 0x5ad	
-	bool m_bAutoKickDisabled; // 0x5ae	
-	bool m_bIsLowViolence; // 0x5af	
-	bool m_bGamePaused; // 0x5b0	
-private:
-	[[maybe_unused]] uint8_t __pad05b1[0x77]; // 0x5b1
-public:
-	int32_t m_nHighestCommandNumberReceived; // 0x628	
-private:
-	[[maybe_unused]] uint8_t __pad062c[0x4]; // 0x62c
-public:
-	int64_t m_nUsecTimestampLastUserCmdReceived; // 0x630	
-private:
-	[[maybe_unused]] uint8_t __pad0638[0x10]; // 0x638
-public:
-	int m_iIgnoreGlobalChat; // 0x648	
-	float m_flLastPlayerTalkTime; // 0x64c	
-	float m_flLastEntitySteadyState; // 0x650	
-	int32_t m_nAvailableEntitySteadyState; // 0x654	
-	bool m_bHasAnySteadyStateEnts; // 0x658	
-private:
-	[[maybe_unused]] uint8_t __pad0659[0xf]; // 0x659
-public:
-	// MNetworkEnable
-	// MNetworkEncoder
-	// MNetworkChangeCallback "OnSteamIDChanged"
-	uint64_t m_steamID; // 0x668	
-	// MNetworkEnable
-	uint32_t m_iDesiredFOV; // 0x670	
 };
 
 #endif // CS2_GAMEMOVEMENT_H
