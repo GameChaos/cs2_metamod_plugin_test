@@ -40,7 +40,9 @@ public:
 	const char *GetLogTag();
 };
 
-void Hook_ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
+void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick);
+void Hook_ClientFullyConnect(CPlayerSlot slot);
+float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused);
 
 extern StubPlugin g_StubPlugin;
 
