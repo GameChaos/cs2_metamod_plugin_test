@@ -174,7 +174,7 @@ public:
 	uint8_t moveDataFlags; // 0x0
 	CHandle<CBaseEntity> m_nPlayerHandle; // 0x4 don't know if this is actually a CHandle. <CBaseEntity> is a placeholder
 	uint8_t unknown1[0xC];
-	Vector m_vecViewAngles; // 0x14
+	QAngle m_vecViewAngles; // 0x14
 	float m_flForwardMove; // 0x20
 	float m_flSideMove; // 0x24
 	float m_flUpMove; // 0x28

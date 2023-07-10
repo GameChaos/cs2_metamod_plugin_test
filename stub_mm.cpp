@@ -36,6 +36,24 @@ CGlobalVars *gpGlobals = NULL;
 
 #include "hooks.cpp"
 
+#define MAXPLAYERS 64
+
+#define PRE_VELMOD_MAX 1.104 // Calculated 276/250
+
+struct PlayerData
+{
+	b32 turning;
+	
+	// CCSPlayerPawnBase *pawn;
+	QAngle oldAngles;
+	
+	f32 preVelMod;
+	f32 preVelModLastChange;
+	s32 preTickCounter;
+};
+
+PlayerData g_playerData[MAXPLAYERS + 1];
+
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
@@ -56,9 +74,143 @@ bool StubPlugin::Unload(char *error, size_t maxlen)
 	return true;
 }
 
+internal float VectorNormalize(Vector &vec)
+{
+	float result = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+	if (result != 0)
+	{
+		vec *= 1.0f / result;
+	}
+	return result;
+}
+
 internal b32 IsButtonDown(CInButtonState buttons, InputBitMask_t button)
 {
 	b32 result = buttons.m_pButtonStates[0] & button;
+	return result;
+}
+
+float GetCurtime()
+{
+	gpGlobals = engine->GetServerGlobals();
+	float result = gpGlobals->curtime;
+	return result;
+}
+
+float GetClientMovingDirection(CCSPlayer_MovementServices *moveServices, CMoveData *mv, bool ladder)
+{
+	QAngle angles = mv->m_vecViewAngles;
+	angles[0] = CLAMP(-70.0f, angles[0], 70.0f);
+	
+	Vector viewNormal;
+	if (ladder)
+	{
+		viewNormal = moveServices->m_vecLadderNormal;
+	}
+	else
+	{
+		AngleVectors_(&mv->m_vecViewAngles, &viewNormal, NULL, NULL);
+	}
+	
+	Vector velocity = mv->m_vecVelocity.Normalized();
+	
+	f32 direction = velocity.Dot(viewNormal);
+	if (ladder)
+	{
+		direction *= -1;
+	}
+	return direction;
+}
+
+float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServices, CMoveData *mv)
+{
+	if (!CBaseEntity_GetGroundEntity(moveServices->pawn))
+	{
+		return pd->preVelMod;
+	}
+	float speed = mv->m_vecVelocity.Length2D();
+	
+	u64 buttons = moveServices->m_nButtons.m_pButtonStates[0];
+	b32 turning = mv->m_vecViewAngles[1] != pd->oldAngles[1];
+	if (!turning)
+	{
+		if (GetCurtime() - pd->preVelModLastChange > 0.2f)
+		{
+			pd->preVelMod = 1.0f;
+			pd->preVelModLastChange = GetCurtime();
+		}
+		else if (pd->preVelMod > PRE_VELMOD_MAX + 0.007f)
+		{
+			return PRE_VELMOD_MAX - 0.001f; // Returning without setting the variable is intentional
+		}
+	}
+	else if ((buttons & IN_MOVELEFT || buttons & IN_MOVERIGHT) && speed > 248.9)
+	{
+		float increment = 0.0009f;
+		if (pd->preVelMod > 1.04f)
+		{
+			increment = 0.001f;
+		}
+		
+		bool forwards = GetClientMovingDirection(moveServices, mv, false) > 0.0f;
+		
+		if ((buttons & IN_MOVERIGHT && buttons || buttons && !forwards)
+			 || (buttons & IN_MOVELEFT && buttons || buttons && !forwards))
+		{
+			pd->preTickCounter++;
+			
+			if (pd->preTickCounter < 75)
+			{
+				pd->preVelMod += increment;
+				if (pd->preVelMod > PRE_VELMOD_MAX)
+				{
+					if (pd->preVelMod > PRE_VELMOD_MAX + 0.007f)
+					{
+						pd->preVelMod = PRE_VELMOD_MAX - 0.001f;
+					}
+					else
+					{
+						pd->preVelMod -= 0.007f;
+					}
+				}
+				pd->preVelMod += increment;
+			}
+			else
+			{
+				pd->preVelMod -= 0.0045;
+				pd->preTickCounter -= 2;
+				
+				if (pd->preVelMod < 1.0)
+				{
+					pd->preVelMod = 1.0;
+					pd->preTickCounter = 0;
+				}
+			}
+		}
+		else
+		{
+			pd->preVelMod -= 0.04;
+			
+			if (pd->preVelMod < 1.0)
+			{
+				pd->preVelMod = 1.0;
+			}
+		}
+		
+		pd->preVelModLastChange = GetCurtime();
+	}
+	else
+	{
+		pd->preTickCounter = 0;
+		return 1.0; // Returning without setting the variable is intentional
+	}
+	
+	return pd->preVelMod;
+}
+
+internal b32 IsValidPlayerSlot(CPlayerSlot slot)
+{
+	b32 result = slot.Get() >= 0 && slot.Get() <= MAXPLAYERS;
 	return result;
 }
 
@@ -67,7 +219,18 @@ internal CEntityIndex GetPawnControllerEntIndex(CBasePlayerPawn *pawn)
 	CEntityIndex result = -1;
 	if (pawn->m_hController.m_Index != 0xffffffff)
 	{
-		CEntityIndex result = pawn->m_hController.m_Index & 0x3fff;
+		result = pawn->m_hController.m_Index & 0x3fff;
+	}
+	return result;
+}
+
+internal CPlayerSlot GetPawnPlayerSlot(CBasePlayerPawn *pawn)
+{
+	CEntityIndex entindex = GetPawnControllerEntIndex(pawn);
+	CPlayerSlot result = -1;
+	if (entindex.Get() > 0 && entindex.Get() <= MAXPLAYERS + 1)
+	{
+		result = entindex.Get() - 1;
 	}
 	return result;
 }
@@ -84,20 +247,18 @@ internal CBasePlayerController *GetPawnController(CBasePlayerPawn *pawn)
 	return result;
 }
 
-internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
+// TODO: is this CBasePlayerPawn or CCSPlayerPawnBase?!
+internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 {
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
 	
-	CEntityIndex entindex = -1;
-	CEntityInstance_entindex(this_, &entindex);
-	
-	CEntityIndex index = GetPawnControllerEntIndex(this_);
-	CBasePlayerController *controller = GetPawnController(this_);
-	
-	if (this_->m_fFlags & FL_ONGROUND)
+	CPlayerSlot slot = GetPawnPlayerSlot(this_);
+	if (IsValidPlayerSlot(slot))
 	{
-		// this_->m_vecAbsVelocity.z = 320.0f;
+		PlayerData *pd = &g_playerData[slot.Get()];
+		
+		pd->oldAngles = this_->m_angEyeAngles;
 	}
 	
 	subhook_install(CCSPP_PostThink_hook);
@@ -116,15 +277,37 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 {
 	subhook_remove(CCSP_MS__WalkMove_hook);
-	CCSP_MS__WalkMove(this_, mv);
-	gpGlobals = engine->GetServerGlobals();
 	
-	if (IsButtonDown(this_->m_nButtons, IN_FORWARD))
+	CCSP_MS__WalkMove(this_, mv);
+	
+	CPlayerSlot slot = GetPawnPlayerSlot(this_->pawn);
+	if (IsValidPlayerSlot(slot))
 	{
-		
+		PlayerData *pd = &g_playerData[slot.Get()];
+		pd->preVelMod = CalcPrestrafeVelMod(pd, this_, mv);
 	}
 	
 	subhook_install(CCSP_MS__WalkMove_hook);
+}
+
+internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed)
+{
+	CPlayerSlot slot = GetPawnPlayerSlot(this_);
+	if (IsValidPlayerSlot(slot))
+	{
+		PlayerData *pd = &g_playerData[slot.Get()];
+		return 250.0f * pd->preVelMod;
+	}
+	return 250.0f;
+}
+
+internal CCSP_MS__FRICTION(Hook_CCSP_MS__Friction)
+{
+	subhook_remove(CCSP_MS__Friction_hook);
+	
+	CCSP_MS__Friction(this_, mv);
+	
+	subhook_install(CCSP_MS__Friction_hook);
 }
 
 internal CREATEENTITY(Hook_CreateEntity)
@@ -147,30 +330,14 @@ internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 	gpGlobals = engine->GetServerGlobals();
 }
 
+internal void ResetPlayerData(PlayerData *pd)
+{
+	*pd = PlayerData{};
+}
+
 internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
-	CBasePlayerController *test = PlayerSlotToPlayerController(slot);
-	engine->ClientCommand(slot, "say poopee");
-	gpGlobals = engine->GetServerGlobals();
-	META_CONPRINTF("player slot: %i\n", slot.Get());
-	META_CONPRINTF("network version: %i\n", serverconfig->GetNetworkVersion());
-	META_CONPRINTF("realtime: %f\n", gpGlobals->realtime);
-	META_CONPRINTF("framecount: %i\n", gpGlobals->framecount);
-	META_CONPRINTF("absoluteframetime: %f\n", gpGlobals->absoluteframetime);
-	META_CONPRINTF("absoluteframestarttimestddev: %f\n", gpGlobals->absoluteframestarttimestddev);
-	META_CONPRINTF("maxClients: %i\n", gpGlobals->maxClients);
-	META_CONPRINTF("interpolation_amount: %f\n", gpGlobals->interpolation_amount);
-	META_CONPRINTF("simTicksThisFrame: %i\n", gpGlobals->simTicksThisFrame);
-	META_CONPRINTF("network_protocol: %i\n", gpGlobals->network_protocol);
-	META_CONPRINTF("MaybeCheckCurTime: %p\n", gpGlobals->MaybeCheckCurtime);
-	META_CONPRINTF("frametime: %f\n", gpGlobals->frametime);
-	META_CONPRINTF("curtime: %f\n", gpGlobals->curtime);
-	META_CONPRINTF("m_bClient: %i\n", gpGlobals->m_bClient);
-	META_CONPRINTF("nTimestampNetworkingBase: %i\n", gpGlobals->nTimestampNetworkingBase);
-	META_CONPRINTF("nTimestampNetworkingWindow: %i\n", gpGlobals->nTimestampRandomizeWindow);
-	META_CONPRINTF("tickcount: %i\n", gpGlobals->tickcount);
-	META_CONPRINTF("interval_per_tick: %f\n", gpGlobals->interval_per_tick);
-	META_CONPRINTF("mapname: %s\n", gpGlobals->mapname);
+	ResetPlayerData(&g_playerData[slot.Get()]);
 }
 
 internal float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused)
