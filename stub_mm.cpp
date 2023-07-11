@@ -47,6 +47,7 @@ struct PlayerData
 	// CCSPlayerPawnBase *pawn;
 	QAngle oldAngles;
 	
+	f32 realPreVelMod;
 	f32 preVelMod;
 	f32 preVelModLastChange;
 	s32 preTickCounter;
@@ -284,7 +285,7 @@ internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 	if (IsValidPlayerSlot(slot))
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
-		pd->preVelMod = CalcPrestrafeVelMod(pd, this_, mv);
+		pd->realPreVelMod = CalcPrestrafeVelMod(pd, this_, mv);
 	}
 	
 	subhook_install(CCSP_MS__WalkMove_hook);
@@ -296,7 +297,7 @@ internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed)
 	if (IsValidPlayerSlot(slot))
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
-		return 250.0f * pd->preVelMod;
+		return 250.0f * pd->realPreVelMod;
 	}
 	return 250.0f;
 }
