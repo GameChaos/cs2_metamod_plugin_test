@@ -6,7 +6,6 @@
 #define PRE_COUNTER_MAX 0.5859375       // in seconds? (75 frames on 128 tick)
 #include "mathlib/vector.h"
 
-f32 gfMaxspeed = 250.0f;
 f32 g_PrestrafeVelocity = 1.0;
 f32 g_RealVelPreMod = 1.0;
 f32 g_fVelocityModifierLastChange;
@@ -45,9 +44,6 @@ float CalcPrestrafeVelMod(CCSPlayer_MovementServices* ms, CMoveData* mv)
 		return g_PrestrafeVelocity;
 	}
 
-	//DoPrintCenter(NULL, "Moveright %i | Turnright %i\nMoveleft %i | Turnleft %i",
-	//	!!IsButtonDown(ms->m_nButtons, IN_MOVERIGHT), !!IsTurningRight(ms, mv),
-	//	!!IsButtonDown(ms->m_nButtons, IN_MOVELEFT), !!IsTurningLeft(ms, mv));
 	if (!IsTurning(ms, mv))
 	{
 		if (gpGlobals->curtime - g_fVelocityModifierLastChange > 0.2)
@@ -122,4 +118,18 @@ float CalcPrestrafeVelMod(CCSPlayer_MovementServices* ms, CMoveData* mv)
 	}
 
 	return g_PrestrafeVelocity;
+}
+
+void SetupKZTimerConvars()
+{
+	engine->ServerCommand("sv_accelerate 6.5");
+	engine->ServerCommand("sv_accelerate_use_weapon_speed 0");
+	engine->ServerCommand("sv_airaccelerate 100");
+	engine->ServerCommand("sv_enablebunnyhopping 1");
+	engine->ServerCommand("sv_friction 5");
+	engine->ServerCommand("sv_ladder_scale_speed 1");
+	engine->ServerCommand("sv_maxvelocity 2000");
+	engine->ServerCommand("sv_staminamax 0");
+	engine->ServerCommand("sv_wateraccelerate 10");
+	engine->ServerCommand("sv_jump_spam_penalty_time 0.0078125");	
 }

@@ -27,7 +27,8 @@ CGlobalVars *gpGlobals = NULL;
 
 #include "hooks.cpp"
 bool enableDebug = false;
-f32 tickrate = 64.0f;
+f32 tickrate = 128.0f;
+f32 maxspeed = 250.0f;
 #include "util.cpp"
 #include "kztimer.cpp"
 
@@ -107,11 +108,18 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 {
 	subhook_remove(CCSP_MS__WalkMove_hook);
-	f32 oldMaxspeed = mv->m_flMaxSpeed;
-	mv->m_flMaxSpeed = 250.0f * CalcPrestrafeVelMod(this_, mv);
 	CCSP_MS__WalkMove(this_, mv);
-	mv->m_flMaxSpeed = oldMaxspeed;
 	subhook_install(CCSP_MS__WalkMove_hook);
+}
+
+internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
+{
+	subhook_remove(CCSP_MS__AirAccelerate_hook);
+	f32 oldMaxSpeed = CCSPP_GetMaxSpeed((CCSPlayerPawn*)this_->pawn);
+	mv->m_flMaxSpeed = MIN(250.0f, mv->m_flMaxSpeed);
+	CCSP_MS__AirAccelerate(this_, mv, wishdir, wishspeed, accel);
+	mv->m_flMaxSpeed = oldMaxSpeed;
+	subhook_install(CCSP_MS__AirAccelerate_hook);
 }
 
 internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
@@ -131,7 +139,6 @@ internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
 		gfPrespeed = mv->m_vecVelocity.Length2D();
 	}
 
-	
 	subhook_install(CCSP_MS__OnJump_hook);
 }
 
@@ -201,6 +208,15 @@ internal CREATEENTITY(Hook_CreateEntity)
 	return result;
 }
 
+internal FINDUSEENTITY(Hook_FindUseEntity)
+{
+	subhook_remove(FindUseEntity_hook);
+	CBaseEntity *ent = FindUseEntity(pawn);
+	if (enableDebug) META_CONPRINTF("%x FindUseEnt: %x\n", pawn, ent);
+	subhook_install(FindUseEntity_hook);
+	return ent;
+}
+
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
 	gpGlobals = engine->GetServerGlobals();
@@ -208,6 +224,7 @@ internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 
 internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
+	SetupKZTimerConvars();
 	CBasePlayerController* test = PlayerSlotToPlayerController(slot);
 	META_CONPRINTF("Controller for %i: %x\n", slot, test);
 	gpGlobals = engine->GetServerGlobals();

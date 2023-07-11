@@ -1,5 +1,4 @@
 f32 gfPrespeed = 0.0f;
-
 QAngle oldEyeAngles;
 
 void UpdateOldEyeAngles(CMoveData* mv)
