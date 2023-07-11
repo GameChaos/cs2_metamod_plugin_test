@@ -318,6 +318,63 @@ internal CCSP_MS__FRICTION(Hook_CCSP_MS__Friction)
 	subhook_install(CCSP_MS__Friction_hook);
 }
 
+internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
+{
+	subhook_remove(CCSP_MS__AirAccelerate_hook);
+	
+	gpGlobals = engine->GetServerGlobals();
+	
+	// call airaccel twice to simulate 128 tick airstrafing
+	CPlayerSlot slot = GetPawnPlayerSlot(this_->pawn);
+	if (gpGlobals->interval_per_tick == 1.0f / 64.0f
+		&& IsValidPlayerSlot(slot))
+	{
+		PlayerData *pd = &g_playerData[slot.Get()];
+		
+		QAngle angles = mv->m_vecViewAngles;
+		// normalise angles beforehand
+		if (angles[0] - pd->oldAngles[0] > 180)
+		{
+			angles[0] -= 360.0f;
+		}
+		else if (angles[0] - pd->oldAngles[0] < 180)
+		{
+			angles[0] += 360.0f;
+		}
+		angles += pd->oldAngles;
+		angles *= 0.5f;
+		
+		Vector forward, right, up;
+		AngleVectors_(&angles, &forward, &right, &up);
+		
+		f32 fmove = -mv->m_flForwardMove;
+		f32 smove = mv->m_flSideMove;
+		
+		forward[2] = 0;
+		right[2] = 0;
+		VectorNormalize(forward);
+		VectorNormalize(right);
+		
+		Vector newWishdir = Vector(0, 0, 0);
+		for (s32 i = 0; i < 2; i++)
+		{
+			newWishdir[i] = forward[i] * fmove + right[i] * smove;
+		}
+		VectorNormalize(newWishdir);
+		
+		gpGlobals->interval_per_tick = 1.0f / 128.0f;
+		CCSP_MS__AirAccelerate(this_, mv, &newWishdir, maxspeed, accel);
+		CCSP_MS__AirAccelerate(this_, mv, wishdir, maxspeed, accel);
+		gpGlobals->interval_per_tick = 1.0f / 64.0f;
+	}
+	else
+	{
+		CCSP_MS__AirAccelerate(this_, mv, wishdir, maxspeed, accel);
+	}
+	
+	subhook_install(CCSP_MS__AirAccelerate_hook);
+}
+
 internal CREATEENTITY(Hook_CreateEntity)
 {
 	subhook_remove(CreateEntity_hook);

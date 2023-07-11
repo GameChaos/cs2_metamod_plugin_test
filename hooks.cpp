@@ -40,6 +40,12 @@ CCSP_MS__Friction_t *CCSP_MS__Friction = NULL;
 subhook_t CCSP_MS__Friction_hook;
 internal CCSP_MS__FRICTION(Hook_CCSP_MS__Friction);
 
+#define CCSP_MS__AIRACCELERATE(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv, Vector *wishdir, float maxspeed, float accel)
+typedef CCSP_MS__AIRACCELERATE(CCSP_MS__AirAccelerate_t);
+CCSP_MS__AirAccelerate_t *CCSP_MS__AirAccelerate = NULL;
+subhook_t CCSP_MS__AirAccelerate_hook;
+internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate);
+
 #define CREATEENTITY(name) CBaseEntity *name(void *this_, u32 a2, void *class_, void *memory, s32 zero, u32 a6, u32 a7, bool a8)
 typedef CREATEENTITY(CreateEntity_t);
 CreateEntity_t *CreateEntity = NULL;
@@ -149,7 +155,19 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		subhook_install(CCSP_MS__Friction_hook);
 	}
 	
-	// Hook_CreateEntity
+	// CCSP_MS__AirAccelerate
+	{
+		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x48\x89\x7C\x24\x18\x55\x48\x8D\x6C\x24\xB1";
+		char *mask = "xxxxxxxxxxxxxxxxxxxxx";
+		if (!(CCSP_MS__AirAccelerate = (CCSP_MS__AirAccelerate_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		CCSP_MS__AirAccelerate_hook = subhook_new((void *)CCSP_MS__AirAccelerate, Hook_CCSP_MS__AirAccelerate, SUBHOOK_64BIT_OFFSET);
+		subhook_install(CCSP_MS__AirAccelerate_hook);
+	}
+	
+	// CreateEntity
 	{
 		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x56\x57\x41\x56\x48\x83\xEC\x40\x4D";
 		char *mask = "xxxxxxxxxxxxxxxxxxx";
@@ -193,6 +211,9 @@ internal void Hooks_UnhookFunctions()
 	
 	subhook_remove(CCSP_MS__Friction_hook);
 	subhook_free(CCSP_MS__Friction_hook);
+	
+	subhook_remove(CCSP_MS__AirAccelerate_hook);
+	subhook_free(CCSP_MS__AirAccelerate_hook);
 	
 	subhook_remove(CreateEntity_hook);
 	subhook_free(CreateEntity_hook);
