@@ -16,8 +16,8 @@ CBaseEntity_GetGroundEntity_t *CBaseEntity_GetGroundEntity = NULL;
 typedef void AngleVectors_t(QAngle *angles, Vector *forward, Vector *right, Vector *up);
 AngleVectors_t *AngleVectors_ = NULL;
 
-typedef CBaseEntity *CSource2EntitySystem__EntFromIndex_t(CSource2EntitySystem *this_, CEntityIndex index);
-CSource2EntitySystem__EntFromIndex_t *CSource2EntitySystem__EntFromIndex = NULL;
+typedef CBaseEntity *CSource2EntitySystem__EntityByIndex_t(CSource2EntitySystem *this_, CEntityIndex index);
+CSource2EntitySystem__EntityByIndex_t *CSource2EntitySystem__EntityByIndex = NULL;
 
 #define CCSPLAYERPAWN_POSTTHINK(name) void name(CCSPlayerPawnBase *this_)
 typedef CCSPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
@@ -116,11 +116,11 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		}
 	}
 	
-	// CSource2EntitySystem__EntFromIndex
+	// CSource2EntitySystem__EntityByIndex
 	{
 		char *sig = "\x81\xFA\xFE\x7F\x00\x00\x77\x36";
 		char *mask = "xxxxxxxx";
-		if (!(CSource2EntitySystem__EntFromIndex = (CSource2EntitySystem__EntFromIndex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		if (!(CSource2EntitySystem__EntityByIndex = (CSource2EntitySystem__EntityByIndex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
 			return false;
 		}
