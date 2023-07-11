@@ -1,9 +1,9 @@
-#define PRE_VELMOD_MAX 1.104 // Calculated 276/250
-#define PRE_VELMOD_INCREMENT 0.1152     // per second. (0.0009 per tick on 128 tick)
-#define PRE_VELMOD_INCREMENT_FAST 0.128 // per second. (0.0001 per tick on 128 tick)
-#define PRE_VELMOD_DECREMENT 0.576      // per second. (0.0045 per tick on 128 tick)
-#define PRE_VELMOD_DECREMENT_FAST 5.12  // per second. (0.04 per tick on 128 tick)
-#define PRE_COUNTER_MAX 0.5859375       // in seconds? (75 frames on 128 tick)
+#define PS_VELMOD_MAX 1.104 // Calculated 276/250
+#define PS_INCREMENT (0.0009f * 128.0f)
+#define PS_INCREMENT_FAST (0.001f * 128.0f)
+#define PS_DECREMENT (0.007f * 128.0f)
+#define PS_DECREMENT_FAST (0.04f * 128.0f)
+#define PS_MAX_COUNT (75.0f / 128.0f)
 #include "mathlib/vector.h"
 
 f32 g_PrestrafeVelocity = 1.0;
@@ -37,87 +37,116 @@ float GetClientMovingDirection(CCSPlayer_MovementServices* ms, CMoveData* mv)
 }
 
 
-float CalcPrestrafeVelMod(CCSPlayer_MovementServices* ms, CMoveData* mv)
+float GetClientMovingDirection(CCSPlayer_MovementServices *moveServices, CMoveData *mv, bool ladder)
 {
-	if (!(ms->pawn->m_fFlags & FL_ONGROUND))
+	QAngle angles = mv->m_vecViewAngles;
+	angles[0] = CLAMP(-70.0f, angles[0], 70.0f);
+	
+	Vector viewNormal;
+	if (ladder)
 	{
-		return g_PrestrafeVelocity;
+		viewNormal = moveServices->m_vecLadderNormal;
 	}
-
-	if (!IsTurning(ms, mv))
+	else
 	{
-		if (gpGlobals->curtime - g_fVelocityModifierLastChange > 0.2)
+		AngleVectors(&mv->m_vecViewAngles, &viewNormal, NULL, NULL);
+	}
+	
+	Vector velocity = mv->m_vecVelocity.Normalized();
+	
+	f32 direction = velocity.Dot(viewNormal);
+	if (ladder)
+	{
+		direction *= -1;
+	}
+	return direction;
+}
+
+
+float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServices, CMoveData *mv)
+{
+	if (!CBaseEntity_GetGroundEntity(moveServices->pawn))
+	{
+		return pd->preVelMod;
+	}
+	float speed = mv->m_vecVelocity.Length2D();
+	
+	u64 buttons = moveServices->m_nButtons.m_pButtonStates[0];
+	b32 turning = mv->m_vecViewAngles[1] != pd->oldAngles[1];
+	if (!turning)
+	{
+		if (GetCurtime() - pd->preVelModLastChange > 0.2f)
 		{
-			g_PrestrafeVelocity = 1.0;
-			g_fVelocityModifierLastChange = gpGlobals->curtime;
+			pd->preVelMod = 1.0f;
+			pd->preVelModLastChange = GetCurtime();
 		}
-		else if (g_PrestrafeVelocity > PRE_VELMOD_MAX + 0.007)
+		else if (pd->preVelMod > PS_VELMOD_MAX + 0.007f)
 		{
-			return PRE_VELMOD_MAX - 0.001; // Returning without setting the variable is intentional
+			return PS_VELMOD_MAX - 0.001f; // Returning without setting the variable is intentional
 		}
 	}
-	else if ((IsButtonDown(ms->m_nButtons, IN_MOVELEFT) || IsButtonDown(ms->m_nButtons, IN_MOVERIGHT)) && mv->m_vecVelocity.Length2D() > 248.9)
+	else if ((buttons & IN_MOVELEFT || buttons & IN_MOVERIGHT) && speed > 248.9)
 	{
-		float increment = PRE_VELMOD_INCREMENT * gpGlobals->interval_per_tick;
-		if (g_PrestrafeVelocity > 1.04)
+		float increment = PS_INCREMENT * gpGlobals->interval_per_tick;
+		if (pd->preVelMod > 1.04f)
 		{
-			increment = PRE_VELMOD_INCREMENT_FAST * gpGlobals->interval_per_tick;
+			increment = PS_INCREMENT_FAST * gpGlobals->interval_per_tick;;
 		}
-
-		bool forwards = GetClientMovingDirection(ms, mv) > 0.0;
-
-		if ((IsButtonDown(ms->m_nButtons, IN_MOVERIGHT) && IsTurningRight(ms, mv)) || (IsTurningLeft(ms, mv) && !forwards)
-			|| (IsButtonDown(ms->m_nButtons, IN_MOVELEFT) && IsTurningLeft(ms, mv)) || (IsTurningRight(ms, mv) && !forwards))
+		
+		bool forwards = GetClientMovingDirection(moveServices, mv, false) > 0.0f;
+		
+		if ((buttons & IN_MOVERIGHT && IsTurningRight(ms, mv) || IsTurningLeft(ms, mv) && !forwards)
+			 || (buttons & IN_MOVELEFT && IsTurningLeft(ms, mv) || IsTurningRight(ms, mv) && !forwards))
 		{
-			g_PrestrafeFrameCounter++;
-
-			if (float(g_PrestrafeFrameCounter) * gpGlobals->interval_per_tick < PRE_COUNTER_MAX)
+			pd->preCounter += gpGlobals->interval_per_tick;
+			
+			if (pd->preCounter < PS_MAX_COUNT)
 			{
-				g_PrestrafeVelocity += increment;
-				if (g_PrestrafeVelocity > PRE_VELMOD_MAX)
+				pd->preVelMod += increment;
+				if (pd->preVelMod > PS_VELMOD_MAX)
 				{
-					if (g_PrestrafeVelocity > PRE_VELMOD_MAX + 0.007)
+					if (pd->preVelMod > PS_VELMOD_MAX + 0.007f)
 					{
-						g_PrestrafeVelocity = PRE_VELMOD_MAX - 0.001;
+						pd->preVelMod = PS_VELMOD_MAX - 0.001f;
 					}
 					else
 					{
-						g_PrestrafeVelocity -= 0.007;
+						pd->preVelMod -= PS_DECREMENT * gpGlobals->interval_per_tick;
 					}
 				}
-				g_PrestrafeVelocity += increment;
+				pd->preVelMod += increment;
 			}
 			else
 			{
-				g_PrestrafeVelocity -= PRE_VELMOD_DECREMENT * gpGlobals->interval_per_tick;
-				g_PrestrafeFrameCounter -= 2;
-
-				if (g_PrestrafeVelocity < 1.0)
+				pd->preVelMod -= PS_DECREMENT * 0.5f * gpGlobals->interval_per_tick;
+				pd->preCounter -= gpGlobals->interval_per_tick * 2.0f;
+				
+				if (pd->preVelMod < 1.0)
 				{
-					g_PrestrafeVelocity = 1.0;
-					g_PrestrafeFrameCounter = 0;
+					pd->preVelMod = 1.0;
+					pd->preCounter = 0;
 				}
 			}
 		}
 		else
 		{
-			g_PrestrafeVelocity -= PRE_VELMOD_DECREMENT_FAST * gpGlobals->interval_per_tick;
-
-			if (g_PrestrafeVelocity < 1.0)
+			pd->preVelMod -= PS_DECREMENT_FAST * gpGlobals->interval_per_tick;
+			
+			if (pd->preVelMod < 1.0)
 			{
-				g_PrestrafeVelocity = 1.0;
+				pd->preVelMod = 1.0;
 			}
 		}
-
-		g_fVelocityModifierLastChange = gpGlobals->curtime;
+		
+		pd->preVelModLastChange = GetCurtime();
 	}
 	else
 	{
-		g_PrestrafeFrameCounter = 0;
+		pd->preCounter = 0;
 		return 1.0; // Returning without setting the variable is intentional
 	}
-
-	return g_PrestrafeVelocity;
+	
+	return pd->preVelMod;
 }
 
 void SetupKZTimerConvars()

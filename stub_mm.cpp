@@ -18,12 +18,15 @@
 #include <stdio.h>
 #include "stub_mm.h"
 
+class CGameEntitySystem;
+
 StubPlugin g_StubPlugin;
 ISource2GameClients *gameclients = NULL;
 ISource2Server *gamedll = NULL;
 ISource2ServerConfig *serverconfig = NULL;
 IVEngineServer2 *engine = NULL;
 CGlobalVars *gpGlobals = NULL;
+CGameEntitySystem *g_entitySystem = NULL;
 
 #include "hooks.cpp"
 bool enableDebug = false;
@@ -31,6 +34,25 @@ f32 tickrate = 128.0f;
 f32 maxspeed = 250.0f;
 #include "util.cpp"
 #include "kztimer.cpp"
+
+#define MAXPLAYERS 64
+
+#define PS_VELMOD_MAX 1.104 // Calculated 276/250
+
+struct PlayerData
+{
+	b32 turning;
+	
+	// CCSPlayerPawnBase *pawn;
+	QAngle oldAngles;
+	
+	f32 realPreVelMod;
+	f32 preVelMod;
+	f32 preVelModLastChange;
+	f32 preCounter;
+};
+
+PlayerData g_playerData[MAXPLAYERS + 1];
 
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 
@@ -59,7 +81,18 @@ internal CEntityIndex GetPawnControllerEntIndex(CBasePlayerPawn *pawn)
 	CEntityIndex result = -1;
 	if (pawn->m_hController.m_Index != 0xffffffff)
 	{
-		CEntityIndex result = pawn->m_hController.m_Index & 0x3fff;
+		result = pawn->m_hController.m_Index & 0x3fff;
+	}
+	return result;
+}
+
+internal CPlayerSlot GetPawnPlayerSlot(CBasePlayerPawn *pawn)
+{
+	CEntityIndex entindex = GetPawnControllerEntIndex(pawn);
+	CPlayerSlot result = -1;
+	if (entindex.Get() > 0 && entindex.Get() <= MAXPLAYERS + 1)
+	{
+		result = entindex.Get() - 1;
 	}
 	return result;
 }
@@ -76,7 +109,8 @@ internal CBasePlayerController *GetPawnController(CBasePlayerPawn *pawn)
 	return result;
 }
 
-internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
+// TODO: is this CBasePlayerPawn or CCSPlayerPawnBase?!
+internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 {
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
@@ -84,11 +118,13 @@ internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 	if (enableDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
 	gpPawn = this_;
 	
-	CEntityIndex entindex = -1;
-	CEntityInstance_entindex(this_, &entindex);
-	
-	CEntityIndex index = GetPawnControllerEntIndex(this_);
-	CBasePlayerController *controller = GetPawnController(this_);
+	CPlayerSlot slot = GetPawnPlayerSlot(this_);
+	if (IsValidPlayerSlot(slot))
+	{
+		PlayerData *pd = &g_playerData[slot.Get()];
+		
+		pd->oldAngles = this_->m_angEyeAngles;
+	}
 	
 	subhook_install(CCSPP_PostThink_hook);
 }
@@ -108,7 +144,15 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 {
 	subhook_remove(CCSP_MS__WalkMove_hook);
-	CCSP_MS__WalkMove(this_, mv);
+	
+	CCSP_MS__WalkMove(this_, mv);	
+	CPlayerSlot slot = GetPawnPlayerSlot(this_->pawn);
+	
+	if (IsValidPlayerSlot(slot))
+	{
+		PlayerData *pd = &g_playerData[slot.Get()];
+		pd->realPreVelMod = CalcPrestrafeVelMod(pd, this_, mv);
+	}
 	subhook_install(CCSP_MS__WalkMove_hook);
 }
 
@@ -190,7 +234,79 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 
 internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed)
 {
-	return 250.0f * g_RealVelPreMod;
+	CPlayerSlot slot = GetPawnPlayerSlot(this_);
+	if (IsValidPlayerSlot(slot))
+	{
+		PlayerData *pd = &g_playerData[slot.Get()];
+		return 250.0f * pd->realPreVelMod;
+	}
+	return 250.0f;
+}
+
+internal CCSP_MS__FRICTION(Hook_CCSP_MS__Friction)
+{
+	subhook_remove(CCSP_MS__Friction_hook);
+	
+	CCSP_MS__Friction(this_, mv);
+	
+	subhook_install(CCSP_MS__Friction_hook);
+}
+
+internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
+{
+	subhook_remove(CCSP_MS__AirAccelerate_hook);
+	
+	gpGlobals = engine->GetServerGlobals();
+	
+	// call airaccel twice to simulate 128 tick airstrafing
+	CPlayerSlot slot = GetPawnPlayerSlot(this_->pawn);
+	if (gpGlobals->interval_per_tick == 1.0f / 64.0f
+		&& IsValidPlayerSlot(slot))
+	{
+		PlayerData *pd = &g_playerData[slot.Get()];
+		
+		QAngle angles = mv->m_vecViewAngles;
+		// normalise angles beforehand
+		if (angles[0] - pd->oldAngles[0] > 180)
+		{
+			angles[0] -= 360.0f;
+		}
+		else if (angles[0] - pd->oldAngles[0] < 180)
+		{
+			angles[0] += 360.0f;
+		}
+		angles += pd->oldAngles;
+		angles *= 0.5f;
+		
+		Vector forward, right, up;
+		AngleVectors_(&angles, &forward, &right, &up);
+		
+		f32 fmove = -mv->m_flForwardMove;
+		f32 smove = mv->m_flSideMove;
+		
+		forward[2] = 0;
+		right[2] = 0;
+		VectorNormalize(forward);
+		VectorNormalize(right);
+		
+		Vector newWishdir = Vector(0, 0, 0);
+		for (s32 i = 0; i < 2; i++)
+		{
+			newWishdir[i] = forward[i] * fmove + right[i] * smove;
+		}
+		VectorNormalize(newWishdir);
+		
+		gpGlobals->interval_per_tick = 1.0f / 128.0f;
+		CCSP_MS__AirAccelerate(this_, mv, &newWishdir, maxspeed, accel);
+		CCSP_MS__AirAccelerate(this_, mv, wishdir, maxspeed, accel);
+		gpGlobals->interval_per_tick = 1.0f / 64.0f;
+	}
+	else
+	{
+		CCSP_MS__AirAccelerate(this_, mv, wishdir, maxspeed, accel);
+	}
+	
+	subhook_install(CCSP_MS__AirAccelerate_hook);
 }
 
 internal CREATEENTITY(Hook_CreateEntity)
@@ -217,36 +333,30 @@ internal FINDUSEENTITY(Hook_FindUseEntity)
 	return ent;
 }
 
+internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
+{
+	subhook_remove(InitialiseGameEntitySystem_hook);
+	
+	g_entitySystem = InitialiseGameEntitySystem(memory);
+	
+	subhook_install(InitialiseGameEntitySystem_hook);
+	return g_entitySystem;
+}
+
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
 	gpGlobals = engine->GetServerGlobals();
 }
 
+internal void ResetPlayerData(PlayerData *pd)
+{
+	*pd = PlayerData{};
+}
+
 internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
 	SetupKZTimerConvars();
-	CBasePlayerController* test = PlayerSlotToPlayerController(slot);
-	META_CONPRINTF("Controller for %i: %x\n", slot, test);
-	gpGlobals = engine->GetServerGlobals();
-	META_CONPRINTF("player slot: %i\n", slot.Get());
-	META_CONPRINTF("network version: %i\n", serverconfig->GetNetworkVersion());
-	META_CONPRINTF("realtime: %f\n", gpGlobals->realtime);
-	META_CONPRINTF("framecount: %i\n", gpGlobals->framecount);
-	META_CONPRINTF("absoluteframetime: %f\n", gpGlobals->absoluteframetime);
-	META_CONPRINTF("absoluteframestarttimestddev: %f\n", gpGlobals->absoluteframestarttimestddev);
-	META_CONPRINTF("maxClients: %i\n", gpGlobals->maxClients);
-	META_CONPRINTF("interpolation_amount: %f\n", gpGlobals->interpolation_amount);
-	META_CONPRINTF("simTicksThisFrame: %i\n", gpGlobals->simTicksThisFrame);
-	META_CONPRINTF("network_protocol: %i\n", gpGlobals->network_protocol);
-	META_CONPRINTF("MaybeCheckCurTime: %p\n", gpGlobals->MaybeCheckCurtime);
-	META_CONPRINTF("frametime: %f\n", gpGlobals->frametime);
-	META_CONPRINTF("curtime: %f\n", gpGlobals->curtime);
-	META_CONPRINTF("m_bClient: %i\n", gpGlobals->m_bClient);
-	META_CONPRINTF("nTimestampNetworkingBase: %i\n", gpGlobals->nTimestampNetworkingBase);
-	META_CONPRINTF("nTimestampNetworkingWindow: %i\n", gpGlobals->nTimestampRandomizeWindow);
-	META_CONPRINTF("tickcount: %i\n", gpGlobals->tickcount);
-	META_CONPRINTF("interval_per_tick: %f\n", gpGlobals->interval_per_tick);
-	META_CONPRINTF("mapname: %s\n", gpGlobals->mapname);
+	ResetPlayerData(&g_playerData[slot.Get()]);
 }
 
 internal float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused)

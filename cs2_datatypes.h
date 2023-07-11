@@ -1249,6 +1249,20 @@ public:
 };
 static_assert(sizeof(CBaseToggle) == 0x780, "Class didn't match expected size");
 
+class CCSPlayerPawnBase;
+// Size: 0x40
+class CPlayerPawnComponent
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkDisable
+	// MNetworkChangeAccessorFieldPathIndex
+	CNetworkVarChainer __m_pChainEntity; // 0x8
+	CCSPlayerPawnBase *pawn; // 
+	uint8_t __pad0030[0x8]; // 0x0
+};
+static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
+
 // Size: 0xb0
 class CPlayer_WeaponServices : public CPlayerPawnComponent
 {
