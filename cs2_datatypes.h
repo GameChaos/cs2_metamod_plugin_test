@@ -13,6 +13,8 @@ class CBaseFilter;
 #include "ihandleentity.h"
 #include "vscript/ivscript.h"
 
+class CBasePlayerPawn;
+
 enum TakeDamageFlags_t : uint32_t
 {
 	DFLAG_NONE = 0x0,
@@ -377,6 +379,19 @@ public:
 };
 static_assert(sizeof(CNetworkVarChainer) == 0x28, "Class didn't match expected size");
 
+// Size: 0x40
+class CPlayerPawnComponent
+{
+public:
+	uint8_t __pad0000[0x8]; // 0x0
+	// MNetworkDisable
+	// MNetworkChangeAccessorFieldPathIndex
+	CNetworkVarChainer __m_pChainEntity; // 0x8
+	CBasePlayerPawn* pawn;
+	uint8_t __pad0030[0x6]; // 0x0
+};
+static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
+
 // Size: 0x78
 class CEntityIdentity
 {
@@ -664,9 +679,9 @@ public:
 	// MNetworkEnable
 	uint8_t m_nCollisionFunctionMask; // 0x2b
 };
+
 static_assert(sizeof(VPhysicsCollisionAttribute_t) == 0x30, "Class didn't match expected size");
 
-#pragma pack(push, 1)
 // Size: 0xb0
 class CCollisionProperty
 {
@@ -715,7 +730,6 @@ public:
 	// MNetworkEnable
 	float m_flCapsuleRadius; // 0xac
 };
-#pragma pack(pop)
 static_assert(sizeof(CCollisionProperty) == 0xb0, "Class didn't match expected size");
 
 // Size: 0x4b0
@@ -884,7 +898,6 @@ public:
 };
 static_assert(sizeof(CBaseEntity) == 0x4b0, "Class didn't match expected size");
 
-class CBasePlayerPawn;
 // Size: 0x690
 class CBasePlayerController : public CBaseEntity
 {
