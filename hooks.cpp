@@ -58,6 +58,12 @@ CCSPP_GetMaxSpeed_t *CCSPP_GetMaxSpeed = NULL;
 subhook_t CCSPP_GetMaxSpeed_hook;
 internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed);
 
+#define INITIALISES2ENTITYSYSTEM(name) CSource2EntitySystem *name(void *memory)
+typedef INITIALISES2ENTITYSYSTEM(InitialiseS2EntitySystem_t);
+InitialiseS2EntitySystem_t *InitialiseS2EntitySystem = NULL;
+subhook_t InitialiseS2EntitySystem_hook;
+internal INITIALISES2ENTITYSYSTEM(Hook_InitialiseS2EntitySystem);
+
 internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 {
 	SH_ADD_HOOK(ISource2Server, GameFrame, gamedll, &Hook_GameFrame, false);
@@ -181,14 +187,26 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	
 	// CCSPP_GetMaxSpeed
 	{
-		char* sig = "\x48\x89\x5C\x24\x10\x57\x48\x83\xEC\x30\x80\xB9\xC2\x02\x00\x00\x00";
-		char* mask = "xxxxxxxxxxxxxxxxx";
-		if (!(CCSPP_GetMaxSpeed = (CCSPP_GetMaxSpeed_t*)SigScan(serverbin, sig, mask, error, maxlen)))
+		char *sig = "\x48\x89\x5C\x24\x10\x57\x48\x83\xEC\x30\x80\xB9\xC2\x02\x00\x00\x00";
+		char *mask = "xxxxxxxxxxxxxxxxx";
+		if (!(CCSPP_GetMaxSpeed = (CCSPP_GetMaxSpeed_t *)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
 			return false;
 		}
 		CCSPP_GetMaxSpeed_hook = subhook_new((void*)CCSPP_GetMaxSpeed, Hook_CCSPP_GetMaxSpeed, SUBHOOK_64BIT_OFFSET);
 		subhook_install(CCSPP_GetMaxSpeed_hook);
+	}
+	
+	// InitialiseS2EntitySystem
+	{
+		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x20\x48\x8B\xD9\xE8\xCC\xCC\xCC\xCC\x33\xFF\xC7\x83\x10";
+		char *mask = "xxxxxxxxxxxxxxxxxxx????xxxxx";
+		if (!(InitialiseS2EntitySystem = (InitialiseS2EntitySystem_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		InitialiseS2EntitySystem_hook = subhook_new((void *)InitialiseS2EntitySystem, Hook_InitialiseS2EntitySystem, SUBHOOK_64BIT_OFFSET);
+		subhook_install(InitialiseS2EntitySystem_hook);
 	}
 	
 	return true;
