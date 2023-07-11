@@ -27,7 +27,7 @@
 
 #include "subhook/subhook.h"
 
-class CSource2EntitySystem;
+class CGameEntitySystem;
 
 StubPlugin g_StubPlugin;
 ISource2GameClients *gameclients = NULL;
@@ -35,7 +35,7 @@ ISource2Server *gamedll = NULL;
 ISource2ServerConfig *serverconfig = NULL;
 IVEngineServer2 *engine = NULL;
 CGlobalVars *gpGlobals = NULL;
-CSource2EntitySystem *g_entitySystem = NULL;
+CGameEntitySystem *g_entitySystem = NULL;
 
 #include "hooks.cpp"
 
@@ -393,13 +393,13 @@ internal CREATEENTITY(Hook_CreateEntity)
 	return result;
 }
 
-internal INITIALISES2ENTITYSYSTEM(Hook_InitialiseS2EntitySystem)
+internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
 {
-	subhook_remove(InitialiseS2EntitySystem_hook);
+	subhook_remove(InitialiseGameEntitySystem_hook);
 	
-	g_entitySystem = InitialiseS2EntitySystem(memory);
+	g_entitySystem = InitialiseGameEntitySystem(memory);
 	
-	subhook_install(InitialiseS2EntitySystem_hook);
+	subhook_install(InitialiseGameEntitySystem_hook);
 	return g_entitySystem;
 }
 

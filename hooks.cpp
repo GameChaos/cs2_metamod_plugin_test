@@ -16,8 +16,8 @@ CBaseEntity_GetGroundEntity_t *CBaseEntity_GetGroundEntity = NULL;
 typedef void AngleVectors_t(QAngle *angles, Vector *forward, Vector *right, Vector *up);
 AngleVectors_t *AngleVectors_ = NULL;
 
-typedef CBaseEntity *CSource2EntitySystem__EntityByIndex_t(CSource2EntitySystem *this_, CEntityIndex index);
-CSource2EntitySystem__EntityByIndex_t *CSource2EntitySystem__EntityByIndex = NULL;
+typedef CBaseEntity *CGameEntitySystem__EntityByIndex_t(CGameEntitySystem *this_, CEntityIndex index);
+CGameEntitySystem__EntityByIndex_t *CGameEntitySystem__EntityByIndex = NULL;
 
 #define CCSPLAYERPAWN_POSTTHINK(name) void name(CCSPlayerPawnBase *this_)
 typedef CCSPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
@@ -55,17 +55,17 @@ CreateEntity_t *CreateEntity = NULL;
 subhook_t CreateEntity_hook;
 internal CREATEENTITY(Hook_CreateEntity);
 
-#define CCSPP_GETMAXSPEED(name) f32 name(CCSPlayerPawnBase * this_)
+#define CCSPP_GETMAXSPEED(name) f32 name(CCSPlayerPawnBase *this_)
 typedef CCSPP_GETMAXSPEED(CCSPP_GetMaxSpeed_t);
 CCSPP_GetMaxSpeed_t *CCSPP_GetMaxSpeed = NULL;
 subhook_t CCSPP_GetMaxSpeed_hook;
 internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed);
 
-#define INITIALISES2ENTITYSYSTEM(name) CSource2EntitySystem *name(void *memory)
-typedef INITIALISES2ENTITYSYSTEM(InitialiseS2EntitySystem_t);
-InitialiseS2EntitySystem_t *InitialiseS2EntitySystem = NULL;
-subhook_t InitialiseS2EntitySystem_hook;
-internal INITIALISES2ENTITYSYSTEM(Hook_InitialiseS2EntitySystem);
+#define INITIALISEGAMEENTITYSYSTEM(name) CGameEntitySystem *name(void *memory)
+typedef INITIALISEGAMEENTITYSYSTEM(InitialiseGameEntitySystem_t);
+InitialiseGameEntitySystem_t *InitialiseGameEntitySystem = NULL;
+subhook_t InitialiseGameEntitySystem_hook;
+internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem);
 
 internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 {
@@ -116,11 +116,11 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		}
 	}
 	
-	// CSource2EntitySystem__EntityByIndex
+	// CGameEntitySystem__EntityByIndex
 	{
 		char *sig = "\x81\xFA\xFE\x7F\x00\x00\x77\x36";
 		char *mask = "xxxxxxxx";
-		if (!(CSource2EntitySystem__EntityByIndex = (CSource2EntitySystem__EntityByIndex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		if (!(CGameEntitySystem__EntityByIndex = (CGameEntitySystem__EntityByIndex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
 			return false;
 		}
@@ -212,16 +212,16 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		subhook_install(CCSPP_GetMaxSpeed_hook);
 	}
 	
-	// InitialiseS2EntitySystem
+	// InitialiseGameEntitySystem
 	{
 		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x20\x48\x8B\xD9\xE8\xCC\xCC\xCC\xCC\x33\xFF\xC7\x83\x10";
 		char *mask = "xxxxxxxxxxxxxxxxxxx????xxxxx";
-		if (!(InitialiseS2EntitySystem = (InitialiseS2EntitySystem_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		if (!(InitialiseGameEntitySystem = (InitialiseGameEntitySystem_t *)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
 			return false;
 		}
-		InitialiseS2EntitySystem_hook = subhook_new((void *)InitialiseS2EntitySystem, Hook_InitialiseS2EntitySystem, SUBHOOK_64BIT_OFFSET);
-		subhook_install(InitialiseS2EntitySystem_hook);
+		InitialiseGameEntitySystem_hook = subhook_new((void *)InitialiseGameEntitySystem, Hook_InitialiseGameEntitySystem, SUBHOOK_64BIT_OFFSET);
+		subhook_install(InitialiseGameEntitySystem_hook);
 	}
 	
 	return true;
