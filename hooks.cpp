@@ -14,17 +14,11 @@ CEntityInstance_entindex_t *CEntityInstance_entindex = NULL;
 typedef void PrintCenterTextToAll_t(char* buffer);
 PrintCenterTextToAll_t *PrintCenterTextToAll = NULL;
 
-typedef CBaseEntity *CSource2EntitySystem__EntityByIndex_t(CGameEntitySystem* entSystem, int index);
-CSource2EntitySystem__EntityByIndex_t *CSource2EntitySystem__EntityByIndex = NULL;
+typedef CBaseEntity *CGameEntitySystem__EntityByIndex_t(CGameEntitySystem* entSystem, int index);
+CGameEntitySystem__EntityByIndex_t *CGameEntitySystem__EntityByIndex = NULL;
 
-#define INITIALISEGAMEENTITYSYSTEM(name) CGameEntitySystem* name(void *memory)
-typedef INITIALISEGAMEENTITYSYSTEM(InitialiseGameEntitySystem_t);
-InitialiseGameEntitySystem_t* InitialiseGameEntitySystem = NULL;
-subhook_t InitialiseGameEntitySystem_hook;
-internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem);
-
-#define CBASEPLAYERPAWN_POSTTHINK(name) void name(CBasePlayerPawn *this_)
-typedef CBASEPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
+#define CCSPLAYERPAWN_POSTTHINK(name) void name(CCSPlayerPawnBase *this_)
+typedef CCSPLAYERPAWN_POSTTHINK(CCSPP_PostThink_t);
 CCSPP_PostThink_t *CCSPP_PostThink = NULL;
 subhook_t CCSPP_PostThink_hook;
 internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink);
@@ -122,25 +116,15 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 			return false;
 		}
 	}
-	
-	// CBaseEntity::GetGroundEntity
+
+	// PrintCenterTextToAll
 	{
-		char *sig = "\x8B\x91\xC4\x03\x00\x00\x83\xFA\xFF\x74\x3F\x4C\x8B\x05";
-		char *mask = "xxxxxxxxxxxxxx";
-		if (!(CBaseEntity_GetGroundEntity = (CBaseEntity_GetGroundEntity_t *)SigScan(serverbin, sig, mask, error, maxlen)))
+		char* sig = "\x48\x83\xEC\x38\x33\xC0\x48\x8B\xD1\x48\x89\x44\x24\x28\x45\x33\xC9\x45\x33\xC0\x48\x89\x44\x24\x20\x8D\x48\x04";
+		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+		if (!(PrintCenterTextToAll = (PrintCenterTextToAll_t*)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
 			return false;
-		}
-	}
-	
-	// AngleVectors
-	{
-		char *sig = "\x48\x8B\xC4\x48\x89\x58\x08\x48\x89\x70\x10\x57\x48\x83\xEC\x70\xF3\x0F\x10\x01\x49\x8B\xF0";
-		char *mask = "xxxxxxxxxxxxxxxxxxxxxxx";
-		if (!(AngleVectors_ = (AngleVectors_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
+		};
 	}
 	
 	// CGameEntitySystem__EntityByIndex
@@ -287,15 +271,6 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		subhook_install(CreateEntity_hook);
 	}
 	
-	// PrintCenterTextToAll
-	{
-		char* sig = "\x48\x83\xEC\x38\x33\xC0\x48\x8B\xD1\x48\x89\x44\x24\x28\x45\x33\xC9\x45\x33\xC0\x48\x89\x44\x24\x20\x8D\x48\x04";
-		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-		if (!(PrintCenterTextToAll = (PrintCenterTextToAll_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		};
-	}
 	
 	// FindUseEntity
 	{
@@ -331,16 +306,6 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		}
 		InitialiseGameEntitySystem_hook = subhook_new((void *)InitialiseGameEntitySystem, Hook_InitialiseGameEntitySystem, SUBHOOK_64BIT_OFFSET);
 		subhook_install(InitialiseGameEntitySystem_hook);
-	}
-
-	// CSource2EntitySystem__EntityByIndex
-	{
-		char* sig = "\x81\xFA\xFE\x7F\x00\x00\x77\x36";
-		char* mask = "xxxxxxxx";
-		if (!(CSource2EntitySystem__EntityByIndex = (CSource2EntitySystem__EntityByIndex_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		};
 	}
 
 	// InitialiseGameEntitySystem

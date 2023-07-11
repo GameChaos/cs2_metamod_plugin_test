@@ -1,33 +1,65 @@
+#define MAXPLAYERS 64
+
 f32 gfPrespeed = 0.0f;
-QAngle oldEyeAngles;
 
-void UpdateOldEyeAngles(CMoveData* mv)
+enum TurnState
 {
-	oldEyeAngles = mv->m_vecViewAngles;
-}
+	TURN_LEFT = -1,
+	TURN_NONE = 0,
+	TURN_RIGHT = 1
+};
 
-b32 IsTurning(CCSPlayer_MovementServices* ms, CMoveData* mv)
+struct PlayerData
 {
-	return oldEyeAngles.y != mv->m_vecViewAngles.y;
-}
+	// General
+	b32 turning;
+	f32 preSpeed;
 
-b32 IsTurningLeft(CCSPlayer_MovementServices* ms, CMoveData* mv)
-{
-	return IsTurning(ms, mv) && (mv->m_vecViewAngles.y < oldEyeAngles.y - 180
-		|| mv->m_vecViewAngles.y > oldEyeAngles.y && mv->m_vecViewAngles.y < oldEyeAngles.y + 180);
-}
-b32 IsTurningRight(CCSPlayer_MovementServices* ms, CMoveData* mv)
-{
-	return IsTurning(ms, mv) && !IsTurningLeft(ms, mv);
-}
+	// CCSPlayerPawnBase *pawn;
+	QAngle oldAngles;
 
-b32 IsButtonDown(CInButtonState buttons, InputBitMask_t button)
+	// KZT stuff
+	f32 realPreVelMod;
+	f32 preVelMod;
+	f32 preVelModLastChange;
+	f32 preCounter;
+};
+
+PlayerData g_playerData[MAXPLAYERS + 1];
+
+internal b32 IsValidPlayerSlot(s32 slot)
 {
-	b32 result = buttons.m_pButtonStates[0] & button;
+	b32 result = slot > 0 && slot <= MAXPLAYERS;
 	return result;
 }
 
-char* GetSpeedText(CCSPlayer_MovementServices* ms, CMoveData* mv)
+internal b32 IsValidPlayerSlot(CPlayerSlot slot)
+{
+	b32 result = slot.Get() > 0 && slot.Get() <= MAXPLAYERS;
+	return result;
+}
+
+TurnState GetTurning(PlayerData* pd, CMoveData* mv)
+{
+	bool turning = pd->oldAngles.y != mv->m_vecViewAngles.y;
+	if (!turning) return TURN_NONE;
+	if (mv->m_vecViewAngles.y < pd->oldAngles.y - 180
+		|| mv->m_vecViewAngles.y > pd->oldAngles.y && mv->m_vecViewAngles.y < pd->oldAngles.y + 180) return TURN_LEFT;
+	return TURN_RIGHT;
+}
+
+b32 IsButtonDown(CInButtonState buttons, InputBitMask_t button, bool checkStillPressed = false)
+{
+	b32 result = buttons.m_pButtonStates[0] & button;
+
+	if (!checkStillPressed)
+	{
+		result |= buttons.m_pButtonStates[1] & button || buttons.m_pButtonStates[2] & button;
+	}
+	return result;
+}
+
+char* GetSpeedText(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv)
 {
 	char buffer[128];
 	if (ms->pawn->m_fFlags & FL_ONGROUND)
@@ -88,7 +120,7 @@ int GetPlayerIndex(CPlayer_MovementServices* const ms)
 
 int GetPlayerIndex(CMoveData* const mv)
 {
-	return GetPlayerIndex(static_cast<CBasePlayerPawn*>(CSource2EntitySystem__EntityByIndex(gpEntitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff)));
+	return GetPlayerIndex(static_cast<CBasePlayerPawn*>(CGameEntitySystem__EntityByIndex(g_entitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff)));
 }
 
 int GetPlayerIndex(CBasePlayerController* const pc)

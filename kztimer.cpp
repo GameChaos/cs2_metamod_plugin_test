@@ -11,7 +11,8 @@ f32 g_RealVelPreMod = 1.0;
 f32 g_fVelocityModifierLastChange;
 f32 g_PrestrafeFrameCounter;
 
-float GetClientMovingDirection(CCSPlayer_MovementServices* ms, CMoveData* mv)
+
+f32 GetClientMovingDirection(CCSPlayer_MovementServices* ms, CMoveData* mv)
 {
 	Vector fVelocity = mv->m_vecVelocity;
 	QAngle fEyeAngles = mv->m_vecViewAngles;
@@ -28,16 +29,19 @@ float GetClientMovingDirection(CCSPlayer_MovementServices* ms, CMoveData* mv)
 	{
 		AngleVectors(mv->m_vecViewAngles, &viewDirection);
 	}
+
 	VectorNormalize(fVelocity);
 	VectorNormalize(viewDirection);
-	float direction = DotProduct(fVelocity, viewDirection);
+
+	f32 direction = DotProduct(fVelocity, viewDirection);
+
 	if (ms->pawn->m_MoveType == MOVETYPE_LADDER)
 		direction = direction * -1;
 	return direction;
 }
 
 
-float GetClientMovingDirection(CCSPlayer_MovementServices *moveServices, CMoveData *mv, bool ladder)
+f32 GetClientMovingDirection(CCSPlayer_MovementServices *ms, CMoveData *mv, bool ladder)
 {
 	QAngle angles = mv->m_vecViewAngles;
 	angles[0] = CLAMP(-70.0f, angles[0], 70.0f);
@@ -45,11 +49,11 @@ float GetClientMovingDirection(CCSPlayer_MovementServices *moveServices, CMoveDa
 	Vector viewNormal;
 	if (ladder)
 	{
-		viewNormal = moveServices->m_vecLadderNormal;
+		viewNormal = ms->m_vecLadderNormal;
 	}
 	else
 	{
-		AngleVectors(&mv->m_vecViewAngles, &viewNormal, NULL, NULL);
+		AngleVectors(mv->m_vecViewAngles, &viewNormal, NULL, NULL);
 	}
 	
 	Vector velocity = mv->m_vecVelocity.Normalized();
@@ -63,29 +67,27 @@ float GetClientMovingDirection(CCSPlayer_MovementServices *moveServices, CMoveDa
 }
 
 
-float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServices, CMoveData *mv)
+float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv)
 {
-	if (!CBaseEntity_GetGroundEntity(moveServices->pawn))
+	if (!(ms->pawn->m_fFlags & FL_ONGROUND))
 	{
 		return pd->preVelMod;
 	}
 	float speed = mv->m_vecVelocity.Length2D();
 	
-	u64 buttons = moveServices->m_nButtons.m_pButtonStates[0];
-	b32 turning = mv->m_vecViewAngles[1] != pd->oldAngles[1];
-	if (!turning)
+	if (!pd->turning)
 	{
-		if (GetCurtime() - pd->preVelModLastChange > 0.2f)
+		if (gpGlobals->curtime - pd->preVelModLastChange > 0.2f)
 		{
 			pd->preVelMod = 1.0f;
-			pd->preVelModLastChange = GetCurtime();
+			pd->preVelModLastChange = gpGlobals->curtime;
 		}
 		else if (pd->preVelMod > PS_VELMOD_MAX + 0.007f)
 		{
 			return PS_VELMOD_MAX - 0.001f; // Returning without setting the variable is intentional
 		}
 	}
-	else if ((buttons & IN_MOVELEFT || buttons & IN_MOVERIGHT) && speed > 248.9)
+	else if ((IsButtonDown(ms->m_nButtons, IN_MOVERIGHT) || IsButtonDown(ms->m_nButtons, IN_MOVELEFT)) && speed > 248.9)
 	{
 		float increment = PS_INCREMENT * gpGlobals->interval_per_tick;
 		if (pd->preVelMod > 1.04f)
@@ -93,10 +95,10 @@ float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServic
 			increment = PS_INCREMENT_FAST * gpGlobals->interval_per_tick;;
 		}
 		
-		bool forwards = GetClientMovingDirection(moveServices, mv, false) > 0.0f;
+		bool forwards = GetClientMovingDirection(ms, mv, false) > 0.0f;
 		
-		if ((buttons & IN_MOVERIGHT && IsTurningRight(ms, mv) || IsTurningLeft(ms, mv) && !forwards)
-			 || (buttons & IN_MOVELEFT && IsTurningLeft(ms, mv) || IsTurningRight(ms, mv) && !forwards))
+		if ((IsButtonDown(ms->m_nButtons, IN_MOVERIGHT) && pd->turning == TURN_RIGHT || pd->turning == TURN_LEFT && !forwards)
+			 || (IsButtonDown(ms->m_nButtons, IN_MOVELEFT) && pd->turning == TURN_LEFT || pd->turning == TURN_RIGHT && !forwards))
 		{
 			pd->preCounter += gpGlobals->interval_per_tick;
 			
@@ -138,7 +140,7 @@ float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServic
 			}
 		}
 		
-		pd->preVelModLastChange = GetCurtime();
+		pd->preVelModLastChange = gpGlobals->curtime;
 	}
 	else
 	{

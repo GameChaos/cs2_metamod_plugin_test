@@ -35,24 +35,6 @@ f32 maxspeed = 250.0f;
 #include "util.cpp"
 #include "kztimer.cpp"
 
-#define MAXPLAYERS 64
-
-#define PS_VELMOD_MAX 1.104 // Calculated 276/250
-
-struct PlayerData
-{
-	b32 turning;
-	
-	// CCSPlayerPawnBase *pawn;
-	QAngle oldAngles;
-	
-	f32 realPreVelMod;
-	f32 preVelMod;
-	f32 preVelModLastChange;
-	f32 preCounter;
-};
-
-PlayerData g_playerData[MAXPLAYERS + 1];
 
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 
@@ -77,14 +59,14 @@ bool StubPlugin::Unload(char *error, size_t maxlen)
 	return true;
 }
 
-internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
+internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 {
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
 	if (enableDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
 	gpPawn = this_;
 	
-	CPlayerSlot slot = GetEntityIndex(this_);
+	CPlayerSlot slot = GetPlayerIndex(this_);
 	if (IsValidPlayerSlot(slot))
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
@@ -99,8 +81,8 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 {
 	subhook_remove(CCSP_MS__CheckJumpButton_hook);
 
-	//if (enableDebug)	META_CONPRINTF("(PRE) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
 	CCSP_MS__CheckJumpButton(this_, mv);
+	
 	//if (enableDebug)	META_CONPRINTF("(POST) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
 
 	subhook_install(CCSP_MS__CheckJumpButton_hook);
@@ -111,24 +93,14 @@ internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 	subhook_remove(CCSP_MS__WalkMove_hook);
 	
 	CCSP_MS__WalkMove(this_, mv);	
-	CPlayerSlot slot = GetPawnPlayerSlot(this_->pawn);
+	s32 slot = GetPlayerIndex(this_->pawn);
 	
 	if (IsValidPlayerSlot(slot))
 	{
-		PlayerData *pd = &g_playerData[slot.Get()];
+		PlayerData *pd = &g_playerData[slot];
 		pd->realPreVelMod = CalcPrestrafeVelMod(pd, this_, mv);
 	}
 	subhook_install(CCSP_MS__WalkMove_hook);
-}
-
-internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
-{
-	subhook_remove(CCSP_MS__AirAccelerate_hook);
-	f32 oldMaxSpeed = CCSPP_GetMaxSpeed((CCSPlayerPawn*)this_->pawn);
-	mv->m_flMaxSpeed = MIN(250.0f, mv->m_flMaxSpeed);
-	CCSP_MS__AirAccelerate(this_, mv, wishdir, wishspeed, accel);
-	mv->m_flMaxSpeed = oldMaxSpeed;
-	subhook_install(CCSP_MS__AirAccelerate_hook);
 }
 
 internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
@@ -146,7 +118,7 @@ internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
 	if (this_->m_flJumpUntil > lastJumpUntil)
 	{
 		gfPrespeed = mv->m_vecVelocity.Length2D();	
-		if (enableDebug) META_CONPRINTF("Hook_CCSP_MS__OnJump %x | moveservice %x | pawn %x | controller %x\n", CSource2EntitySystem__EntityByIndex(gpEntitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff), this_, this_->pawn, this_->pawn->m_hController);
+		if (enableDebug) META_CONPRINTF("Hook_CCSP_MS__OnJump %x | moveservice %x | pawn %x | controller %x\n", CGameEntitySystem__EntityByIndex(g_entitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff), this_, this_->pawn, this_->pawn->m_hController);
 	}
 
 	subhook_install(CCSP_MS__OnJump_hook);
@@ -168,6 +140,7 @@ internal void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args)
 	}
 	else if (strcmp(args[0], "settickrate") == 0 && args.ArgC() == 2)
 	{
+		// Engine defined min/max tickrate
 		tickrate = clamp(atof(args[1]), 10, 1000);
 		META_CONPRINTF("New tickrate: %f. Please change the map to apply the new tickrate.\n", tickrate);
 		RETURN_META(MRES_SUPERCEDE);
@@ -183,24 +156,25 @@ internal CCSGC__GETTICKINTERVAL(Hook_CCSGC__GetTickInterval)
 internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 {
 	subhook_remove(CCSP_MS__ProcessMovement_hook);
-	CCSP_MS__ProcessMovement(this_, mv);
-	//if (enableDebug) META_CONPRINTF("%i %f\n", gpGlobals->tickcount, mv->m_vecVelocity.Length2D());
-	if (gpPawn != NULL && this_->pawn == gpPawn)
+	CPlayerSlot slot = GetPlayerIndex(this_);
+	if (IsValidPlayerSlot(slot))
 	{
+		PlayerData* pd = &g_playerData[slot.Get()];
+		pd->turning = GetTurning(pd, mv);
 		char buffer[1024] = "";
-		g_RealVelPreMod = CalcPrestrafeVelMod(this_, mv);
-		strcat(buffer, GetSpeedText(this_, mv));
+		strcat(buffer, GetSpeedText(pd, this_, mv));
 		strcat(buffer, "\n");
 		strcat(buffer, GetKeyText(this_, mv));
 		DoPrintCenter(buffer);
-		UpdateOldEyeAngles(mv);
 	}
+
+	CCSP_MS__ProcessMovement(this_, mv);
 	subhook_install(CCSP_MS__ProcessMovement_hook);
 }
 
 internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed)
 {
-	CPlayerSlot slot = GetPawnPlayerSlot(this_);
+	CPlayerSlot slot = GetPlayerIndex(this_);
 	if (IsValidPlayerSlot(slot))
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
@@ -223,13 +197,15 @@ internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
 	subhook_remove(CCSP_MS__AirAccelerate_hook);
 	
 	gpGlobals = engine->GetServerGlobals();
-	
+
+	f32 oldMaxSpeed = CCSPP_GetMaxSpeed((CCSPlayerPawn*)this_->pawn);
+	mv->m_flMaxSpeed = MIN(250.0f, mv->m_flMaxSpeed);
 	// call airaccel twice to simulate 128 tick airstrafing
-	CPlayerSlot slot = GetPawnPlayerSlot(this_->pawn);
+	s32 slot = GetPlayerIndex(this_->pawn);
 	if (gpGlobals->interval_per_tick == 1.0f / 64.0f
 		&& IsValidPlayerSlot(slot))
 	{
-		PlayerData *pd = &g_playerData[slot.Get()];
+		PlayerData *pd = &g_playerData[slot];
 		
 		QAngle angles = mv->m_vecViewAngles;
 		// normalise angles beforehand
@@ -245,7 +221,7 @@ internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
 		angles *= 0.5f;
 		
 		Vector forward, right, up;
-		AngleVectors_(&angles, &forward, &right, &up);
+		AngleVectors(angles, &forward, &right, &up);
 		
 		f32 fmove = -mv->m_flForwardMove;
 		f32 smove = mv->m_flSideMove;
@@ -263,7 +239,7 @@ internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
 		VectorNormalize(newWishdir);
 		
 		gpGlobals->interval_per_tick = 1.0f / 128.0f;
-		CCSP_MS__AirAccelerate(this_, mv, &newWishdir, maxspeed, accel);
+		CCSP_MS__AirAccelerate(this_, mv, newWishdir, maxspeed, accel);
 		CCSP_MS__AirAccelerate(this_, mv, wishdir, maxspeed, accel);
 		gpGlobals->interval_per_tick = 1.0f / 64.0f;
 	}
@@ -271,7 +247,8 @@ internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
 	{
 		CCSP_MS__AirAccelerate(this_, mv, wishdir, maxspeed, accel);
 	}
-	
+
+	mv->m_flMaxSpeed = oldMaxSpeed;
 	subhook_install(CCSP_MS__AirAccelerate_hook);
 }
 
@@ -311,14 +288,6 @@ internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
 
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
-}
-
-internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
-{
-	subhook_remove(InitialiseGameEntitySystem_hook);
-	gpEntitySystem = InitialiseGameEntitySystem(memory);
-	subhook_install(InitialiseGameEntitySystem_hook);
-	return gpEntitySystem;
 }
 
 internal void ResetPlayerData(PlayerData *pd)
