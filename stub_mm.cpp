@@ -50,7 +50,7 @@ struct PlayerData
 	f32 realPreVelMod;
 	f32 preVelMod;
 	f32 preVelModLastChange;
-	s32 preTickCounter;
+	f32 preCounter;
 };
 
 PlayerData g_playerData[MAXPLAYERS + 1];
@@ -123,6 +123,13 @@ float GetClientMovingDirection(CCSPlayer_MovementServices *moveServices, CMoveDa
 	return direction;
 }
 
+#define PS_INCREMENT (0.0009f * 128.0f)
+#define PS_INCREMENT_FAST (0.001f * 128.0f)
+#define PS_INCREMENT_TICKS (0.001f * 128.0f)
+#define PS_DECREMENT (0.007f * 128.0f)
+#define PS_DECREMENT_FAST (0.04f * 128.0f)
+#define PS_MAX_COUNT (75.0f / 128.0f)
+
 float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServices, CMoveData *mv)
 {
 	if (!CBaseEntity_GetGroundEntity(moveServices->pawn))
@@ -147,10 +154,10 @@ float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServic
 	}
 	else if ((buttons & IN_MOVELEFT || buttons & IN_MOVERIGHT) && speed > 248.9)
 	{
-		float increment = 0.0009f;
+		float increment = PS_INCREMENT * gpGlobals->interval_per_tick;
 		if (pd->preVelMod > 1.04f)
 		{
-			increment = 0.001f;
+			increment = PS_INCREMENT_FAST * gpGlobals->interval_per_tick;;
 		}
 		
 		bool forwards = GetClientMovingDirection(moveServices, mv, false) > 0.0f;
@@ -158,9 +165,9 @@ float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServic
 		if ((buttons & IN_MOVERIGHT && buttons || buttons && !forwards)
 			 || (buttons & IN_MOVELEFT && buttons || buttons && !forwards))
 		{
-			pd->preTickCounter++;
+			pd->preCounter += gpGlobals->interval_per_tick;
 			
-			if (pd->preTickCounter < 75)
+			if (pd->preCounter < PS_MAX_COUNT)
 			{
 				pd->preVelMod += increment;
 				if (pd->preVelMod > PRE_VELMOD_MAX)
@@ -171,26 +178,26 @@ float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServic
 					}
 					else
 					{
-						pd->preVelMod -= 0.007f;
+						pd->preVelMod -= PS_DECREMENT * gpGlobals->interval_per_tick;
 					}
 				}
 				pd->preVelMod += increment;
 			}
 			else
 			{
-				pd->preVelMod -= 0.0045;
-				pd->preTickCounter -= 2;
+				pd->preVelMod -= PS_DECREMENT * 0.5f * gpGlobals->interval_per_tick;
+				pd->preCounter -= gpGlobals->interval_per_tick * 2.0f;
 				
 				if (pd->preVelMod < 1.0)
 				{
 					pd->preVelMod = 1.0;
-					pd->preTickCounter = 0;
+					pd->preCounter = 0;
 				}
 			}
 		}
 		else
 		{
-			pd->preVelMod -= 0.04;
+			pd->preVelMod -= PS_DECREMENT_FAST * gpGlobals->interval_per_tick;
 			
 			if (pd->preVelMod < 1.0)
 			{
@@ -202,7 +209,7 @@ float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *moveServic
 	}
 	else
 	{
-		pd->preTickCounter = 0;
+		pd->preCounter = 0;
 		return 1.0; // Returning without setting the variable is intentional
 	}
 	
