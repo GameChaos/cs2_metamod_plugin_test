@@ -308,17 +308,6 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		subhook_install(InitialiseGameEntitySystem_hook);
 	}
 
-	// InitialiseGameEntitySystem
-	{
-		char* sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x20\x48\x8B\xD9\xE8\xCC\xCC\xCC\xCC\x33\xFF\xC7\x83\x10";
-		char* mask = "xxxxxxxxxxxxxxxxxxx????xxxxx";
-		if (!(InitialiseGameEntitySystem = (InitialiseGameEntitySystem_t*)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		};
-		InitialiseGameEntitySystem_hook = subhook_new((void*)InitialiseGameEntitySystem, Hook_InitialiseGameEntitySystem, SUBHOOK_64BIT_OFFSET);
-		subhook_install(InitialiseGameEntitySystem_hook);
-	}
 	return true;
 }
 
