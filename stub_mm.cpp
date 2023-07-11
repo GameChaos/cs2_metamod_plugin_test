@@ -64,7 +64,8 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	GET_V_IFACE_CURRENT(GetServerFactory, gamedll, ISource2Server, INTERFACEVERSION_SERVERGAMEDLL);
 	GET_V_IFACE_CURRENT(GetServerFactory, serverconfig, ISource2ServerConfig, INTERFACEVERSION_SERVERCONFIG);
 	GET_V_IFACE_CURRENT(GetServerFactory, gameclients, ISource2GameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
-	
+
+	gpGlobals = engine->GetServerGlobals();
 	return Hooks_HookFunctions(error, maxlen);
 }
 
@@ -76,49 +77,14 @@ bool StubPlugin::Unload(char *error, size_t maxlen)
 	return true;
 }
 
-internal CEntityIndex GetPawnControllerEntIndex(CBasePlayerPawn *pawn)
-{
-	CEntityIndex result = -1;
-	if (pawn->m_hController.m_Index != 0xffffffff)
-	{
-		result = pawn->m_hController.m_Index & 0x3fff;
-	}
-	return result;
-}
-
-internal CPlayerSlot GetPawnPlayerSlot(CBasePlayerPawn *pawn)
-{
-	CEntityIndex entindex = GetPawnControllerEntIndex(pawn);
-	CPlayerSlot result = -1;
-	if (entindex.Get() > 0 && entindex.Get() <= MAXPLAYERS + 1)
-	{
-		result = entindex.Get() - 1;
-	}
-	return result;
-}
-
-internal CBasePlayerController *GetPawnController(CBasePlayerPawn *pawn)
-{
-	CBasePlayerController *result = NULL;
-	CEntityIndex index = GetPawnControllerEntIndex(pawn);
-	// TODO: what is maxplayers?
-	if (index.Get() > 0)
-	{
-		result = PlayerSlotToPlayerController(CPlayerSlot(index.Get() - 1));
-	}
-	return result;
-}
-
-// TODO: is this CBasePlayerPawn or CCSPlayerPawnBase?!
-internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
+internal CBASEPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 {
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
-	gpGlobals = engine->GetServerGlobals();
 	if (enableDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
 	gpPawn = this_;
 	
-	CPlayerSlot slot = GetPawnPlayerSlot(this_);
+	CPlayerSlot slot = GetEntityIndex(this_);
 	if (IsValidPlayerSlot(slot))
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
@@ -133,7 +99,6 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 {
 	subhook_remove(CCSP_MS__CheckJumpButton_hook);
 
-	gpGlobals = engine->GetServerGlobals();
 	//if (enableDebug)	META_CONPRINTF("(PRE) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
 	CCSP_MS__CheckJumpButton(this_, mv);
 	//if (enableDebug)	META_CONPRINTF("(POST) [%i (%.6f)] m_flJumpUntil %f | m_flJumpPressedTime %f, | delta %f\n", gpGlobals->tickcount, gpGlobals->curtime, this_->m_flJumpUntil, this_->m_flJumpPressedTime, gpGlobals->curtime - this_->m_flJumpPressedTime);
@@ -180,7 +145,8 @@ internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
 	}
 	if (this_->m_flJumpUntil > lastJumpUntil)
 	{
-		gfPrespeed = mv->m_vecVelocity.Length2D();
+		gfPrespeed = mv->m_vecVelocity.Length2D();	
+		if (enableDebug) META_CONPRINTF("Hook_CCSP_MS__OnJump %x | moveservice %x | pawn %x | controller %x\n", CSource2EntitySystem__EntityByIndex(gpEntitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff), this_, this_->pawn, this_->pawn->m_hController);
 	}
 
 	subhook_install(CCSP_MS__OnJump_hook);
@@ -345,7 +311,14 @@ internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
 
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
-	gpGlobals = engine->GetServerGlobals();
+}
+
+internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
+{
+	subhook_remove(InitialiseGameEntitySystem_hook);
+	gpEntitySystem = InitialiseGameEntitySystem(memory);
+	subhook_install(InitialiseGameEntitySystem_hook);
+	return gpEntitySystem;
 }
 
 internal void ResetPlayerData(PlayerData *pd)

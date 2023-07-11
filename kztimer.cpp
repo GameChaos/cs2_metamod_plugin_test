@@ -160,5 +160,5 @@ void SetupKZTimerConvars()
 	engine->ServerCommand("sv_maxvelocity 2000");
 	engine->ServerCommand("sv_staminamax 0");
 	engine->ServerCommand("sv_wateraccelerate 10");
-	engine->ServerCommand("sv_jump_spam_penalty_time 0.0078125");	
+	engine->ServerCommand("sv_jump_spam_penalty_time 0.0078125");
 }

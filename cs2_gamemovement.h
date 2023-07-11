@@ -180,7 +180,7 @@ class CMoveData
 public:
 	// TODO: fix offsets that were fricked due to game updates.
 	uint8_t moveDataFlags; // 0x0
-	CHandle<CBaseEntity> m_nPlayerHandle; // 0x4 don't know if this is actually a CHandle. <CBaseEntity> is a placeholder
+	CHandle<CBasePlayerPawn> m_nPlayerHandle; // 0x4 don't know if this is actually a CHandle. <CBaseEntity> is a placeholder
 	uint8_t unknown1[0xC];
 	QAngle m_vecViewAngles; // 0x14
 	float m_flForwardMove; // 0x20

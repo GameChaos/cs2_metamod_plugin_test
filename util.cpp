@@ -6,17 +6,17 @@ void UpdateOldEyeAngles(CMoveData* mv)
 	oldEyeAngles = mv->m_vecViewAngles;
 }
 
-float IsTurning(CCSPlayer_MovementServices* ms, CMoveData* mv)
+b32 IsTurning(CCSPlayer_MovementServices* ms, CMoveData* mv)
 {
 	return oldEyeAngles.y != mv->m_vecViewAngles.y;
 }
 
-float IsTurningLeft(CCSPlayer_MovementServices* ms, CMoveData* mv)
+b32 IsTurningLeft(CCSPlayer_MovementServices* ms, CMoveData* mv)
 {
 	return IsTurning(ms, mv) && (mv->m_vecViewAngles.y < oldEyeAngles.y - 180
 		|| mv->m_vecViewAngles.y > oldEyeAngles.y && mv->m_vecViewAngles.y < oldEyeAngles.y + 180);
 }
-float IsTurningRight(CCSPlayer_MovementServices* ms, CMoveData* mv)
+b32 IsTurningRight(CCSPlayer_MovementServices* ms, CMoveData* mv)
 {
 	return IsTurning(ms, mv) && !IsTurningLeft(ms, mv);
 }
@@ -68,4 +68,44 @@ void DoPrintCenter(const char* fmt, ...)
 	}
 	va_end(ap);
 	PrintCenterTextToAll(buffer);
+}
+
+// Returns the player slot / entindex corresponding to the object.
+int GetPlayerIndex(CBasePlayerPawn* const pawn)
+{
+	int result = -1;
+	if (pawn->m_hController.m_Index != 0xffffffff)
+	{
+		result = pawn->m_hController.m_Index & 0x3fff;
+	}
+	return result;
+}
+
+int GetPlayerIndex(CPlayer_MovementServices* const ms)
+{
+	return GetPlayerIndex(ms->pawn);
+}
+
+int GetPlayerIndex(CMoveData* const mv)
+{
+	return GetPlayerIndex(static_cast<CBasePlayerPawn*>(CSource2EntitySystem__EntityByIndex(gpEntitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff)));
+}
+
+int GetPlayerIndex(CBasePlayerController* const pc)
+{
+	CEntityIndex result = -1;
+	CEntityInstance_entindex(pc, &result);
+	return result.Get();
+}
+
+CBasePlayerController* GetPawnController(CBasePlayerPawn* const pawn)
+{
+	CBasePlayerController* result = NULL;
+	CEntityIndex index = GetPlayerIndex(pawn);
+	// TODO: what is maxplayers?
+	if (index.Get() > 0)
+	{
+		result = PlayerSlotToPlayerController(CPlayerSlot(index.Get() - 1));
+	}
+	return result;
 }
