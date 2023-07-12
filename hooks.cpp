@@ -77,7 +77,7 @@ CreateEntity_t *CreateEntity = NULL;
 subhook_t CreateEntity_hook;
 internal CREATEENTITY(Hook_CreateEntity);
 
-#define FINDUSEENTITY(name) CBaseEntity *name(CBasePlayerPawn* pawn)
+#define FINDUSEENTITY(name) CBaseEntity *name(CBasePlayerPawn *pawn)
 typedef FINDUSEENTITY(FindUseEntity_t);
 FindUseEntity_t *FindUseEntity = NULL;
 subhook_t FindUseEntity_hook;

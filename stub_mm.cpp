@@ -120,7 +120,7 @@ internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
 		CPlayerSlot slot = GetPlayerIndex(this_);
 		if (IsValidPlayerSlot(slot))
 		{
-			PlayerData* pd = &g_playerData[slot.Get()];
+			PlayerData *pd = &g_playerData[slot.Get()];
 
 			pd->preSpeed = mv->m_vecVelocity.Length2D();
 		}
@@ -165,7 +165,7 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 	CPlayerSlot slot = GetPlayerIndex(this_);
 	if (IsValidPlayerSlot(slot))
 	{
-		PlayerData* pd = &g_playerData[slot.Get()];
+		PlayerData *pd = &g_playerData[slot.Get()];
 		pd->turning = GetTurning(pd, mv);
 		char buffer[1024] = "";
 		strcat(buffer, GetSpeedText(pd, this_, mv));

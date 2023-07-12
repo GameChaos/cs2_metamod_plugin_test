@@ -387,7 +387,7 @@ public:
 	// MNetworkDisable
 	// MNetworkChangeAccessorFieldPathIndex
 	CNetworkVarChainer __m_pChainEntity; // 0x8
-	CBasePlayerPawn* pawn;
+	CBasePlayerPawn *pawn;
 	uint8_t __pad0030[0x6]; // 0x0
 };
 static_assert(sizeof(CPlayerPawnComponent) == 0x40, "Class didn't match expected size");
