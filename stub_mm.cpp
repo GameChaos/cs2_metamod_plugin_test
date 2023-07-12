@@ -93,13 +93,6 @@ internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 	subhook_remove(CCSP_MS__WalkMove_hook);
 	
 	CCSP_MS__WalkMove(this_, mv);	
-	s32 slot = GetPlayerIndex(this_->pawn);
-	
-	if (IsValidPlayerSlot(slot))
-	{
-		PlayerData *pd = &g_playerData[slot];
-		pd->realPreVelMod = CalcPrestrafeVelMod(pd, this_, mv);
-	}
 	subhook_install(CCSP_MS__WalkMove_hook);
 }
 
@@ -167,6 +160,7 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
 		pd->turning = GetTurning(pd, mv);
+		pd->realPreVelMod = CalcPrestrafeVelMod(pd, this_, mv);
 		char buffer[1024] = "";
 		strcat(buffer, GetSpeedText(pd, this_, mv));
 		strcat(buffer, "\n");
@@ -276,8 +270,12 @@ internal CREATEENTITY(Hook_CreateEntity)
 internal FINDUSEENTITY(Hook_FindUseEntity)
 {
 	subhook_remove(FindUseEntity_hook);
-	CBaseEntity *ent = FindUseEntity(pawn);
-	if (enableDebug) META_CONPRINTF("%x FindUseEnt: %x\n", pawn, ent);
+	CBaseEntity *ent = FindUseEntity(us);
+	META_CONPRINTF("%i FindUseEnt: %s\n", GetPlayerIndex(us->pawn), ent ? ent->m_pEntity->m_name.String():"");
+	//if (ent && !strcmp(ent->m_pEntity->m_name.String(), "climb_startbutton"))
+	//{
+	//	g_SMAPI->ClientConPrintf(1, "say TIMER STARTED");
+	//}
 	subhook_install(FindUseEntity_hook);
 	return ent;
 }
@@ -312,6 +310,11 @@ internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 
 internal float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused)
 {
+	if (gpGlobals->tickcount % 128 == 0) 
+	{
+		engine->ClientCommand(0, "say TIMER STARTED for %i\n", slot.Get());
+		META_CONPRINTF("Check %i\n", slot.Get());
+	}
 	RETURN_META_VALUE(MRES_IGNORED, 0.0f);
 }
 

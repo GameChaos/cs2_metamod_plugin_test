@@ -87,7 +87,7 @@ f32 CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveDat
 		float increment = PS_INCREMENT * gpGlobals->interval_per_tick;
 		if (pd->preVelMod > 1.04f)
 		{
-			increment = PS_INCREMENT_FAST * gpGlobals->interval_per_tick;;
+			increment = PS_INCREMENT_FAST * gpGlobals->interval_per_tick;
 		}
 		
 		bool forwards = GetClientMovingDirection(ms, mv, false) > 0.0f;
