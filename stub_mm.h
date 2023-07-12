@@ -16,6 +16,14 @@
 #define _INCLUDE_METAMOD_SOURCE_STUB_PLUGIN_H_
 
 #include <ISmmPlugin.h>
+#define SIGSCAN_IMPLEMENTATION
+#include "sigscan.h"
+#include "gc_common.h"
+#include "cs2_datatypes.h"
+#include "cs2_gamemovement.h"
+
+#include "subhook/subhook.h"
+
 
 #if defined WIN32 && !defined snprintf
 #define snprintf _snprintf
@@ -40,12 +48,41 @@ public:
 	const char *GetLogTag();
 };
 
+void Hook_ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
 void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick);
 void Hook_ClientFullyConnect(CPlayerSlot slot);
-float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused);
+float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read* buf, int numcmds, bool ignore, bool paused);
+void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args);
+
+uintptr_t FindPattern(void* start, size_t maxScanBytes, char* pattern, char* ignorePattern);
+
+#define MAXPLAYERS 64
+
+enum TurnState
+{
+	TURN_LEFT = -1,
+	TURN_NONE = 0,
+	TURN_RIGHT = 1
+};
+
+struct PlayerData
+{
+	// General
+	b32 turning;
+	f32 preSpeed;
+
+	// CCSPlayerPawnBase *pawn;
+	QAngle oldAngles;
+
+	// KZT stuff
+	f32 realPreVelMod;
+	f32 preVelMod;
+	f32 preVelModLastChange;
+	f32 preCounter;
+};
+
 
 extern StubPlugin g_StubPlugin;
-
 PLUGIN_GLOBALVARS();
 
 #endif //_INCLUDE_METAMOD_SOURCE_STUB_PLUGIN_H_
