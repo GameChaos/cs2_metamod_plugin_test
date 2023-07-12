@@ -2113,6 +2113,13 @@ public:
 };
 static_assert(sizeof(CCSPlayerPawnBase) == 0x16e0, "Class didn't match expected size");
 
+class CCSPlayerPawn : public CBasePlayerPawn
+{
+public:
+	char __unk0[2000];
+	bool m_bOldJumpPressed; // 5064
+};
+
 // Size: 0x20
 struct locksound_t
 {

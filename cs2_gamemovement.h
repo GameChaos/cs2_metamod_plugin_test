@@ -4,13 +4,6 @@
 
 #include <stdint.h>
 
-class CCSPlayerPawn : public CBasePlayerPawn
-{
-public:
-	char __unk0[2000];
-	bool m_bOldJumpPressed; // 5064
-};
-
 // Size: 0x20
 class CInButtonState
 {
