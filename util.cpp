@@ -37,11 +37,11 @@ char* GetSpeedText(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv
 	char buffer[128];
 	if (ms->pawn->m_fFlags & FL_ONGROUND)
 	{
-		sprintf(buffer, "Speed: %.0f", mv->m_vecVelocity.Length2D());
+		snprintf(buffer, sizeof(buffer), "Speed: %.0f", mv->m_vecVelocity.Length2D());
 	}
 	else
 	{
-		sprintf(buffer, "Speed: %.0f (%.0f)", mv->m_vecVelocity.Length2D(), pd->preSpeed);
+		snprintf(buffer, sizeof(buffer), "Speed: %.0f (%.0f)", mv->m_vecVelocity.Length2D(), pd->preSpeed);
 	}
 	return buffer;
 }
@@ -49,7 +49,7 @@ char* GetSpeedText(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv
 char* GetKeyText(CCSPlayer_MovementServices* ms, CMoveData* mv)
 {
 	char buffer[128];
-	sprintf(buffer, "Keys: %s %s %s %s %s %s",
+	snprintf(buffer, sizeof(buffer), "Keys: %s %s %s %s %s %s",
 		IsButtonDown(ms->m_nButtons, IN_MOVELEFT) ? "A" : "_",
 		IsButtonDown(ms->m_nButtons, IN_FORWARD) ? "W" : "_",
 		IsButtonDown(ms->m_nButtons, IN_BACK) ? "S" : "_",
