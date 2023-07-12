@@ -76,7 +76,7 @@ void DoPrintCenter(const char* fmt, ...)
 }
 
 // Returns the player slot / entindex corresponding to the object.
-int GetPlayerIndex(CBasePlayerPawn *const pawn)
+int GetPlayerIndex(CBasePlayerPawn *pawn)
 {
 	int result = -1;
 	if (pawn->m_hController.m_Index != 0xffffffff)
@@ -86,24 +86,29 @@ int GetPlayerIndex(CBasePlayerPawn *const pawn)
 	return result;
 }
 
-int GetPlayerIndex(CPlayer_MovementServices *const ms)
+int GetPlayerIndex(CPlayer_UseServices* us)
+{
+	return GetPlayerIndex(us->pawn);
+}
+
+int GetPlayerIndex(CPlayer_MovementServices *ms)
 {
 	return GetPlayerIndex(ms->pawn);
 }
 
-int GetPlayerIndex(CMoveData *const mv)
+int GetPlayerIndex(CMoveData *mv)
 {
 	return GetPlayerIndex(static_cast<CBasePlayerPawn*>(CGameEntitySystem__EntityByIndex(g_entitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff)));
 }
 
-int GetPlayerIndex(CBasePlayerController *const pc)
+int GetPlayerIndex(CBasePlayerController *pc)
 {
 	CEntityIndex result = -1;
 	CEntityInstance_entindex(pc, &result);
 	return result.Get();
 }
 
-CBasePlayerController* GetPawnController(CBasePlayerPawn *const pawn)
+CBasePlayerController* GetPawnController(CBasePlayerPawn *pawn)
 {
 	CBasePlayerController* result = NULL;
 	CEntityIndex index = GetPlayerIndex(pawn);
