@@ -262,18 +262,6 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		subhook_install(CCSP_MS__Friction_hook);
 	}
 	
-	// CCSP_MS__AirAccelerate
-	{
-		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x48\x89\x7C\x24\x18\x55\x48\x8D\x6C\x24\xB1";
-		char *mask = "xxxxxxxxxxxxxxxxxxxxx";
-		if (!(CCSP_MS__AirAccelerate = (CCSP_MS__AirAccelerate_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSP_MS__AirAccelerate_hook = subhook_new((void *)CCSP_MS__AirAccelerate, Hook_CCSP_MS__AirAccelerate, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSP_MS__AirAccelerate_hook);
-	}
-	
 	// CreateEntity
 	{
 		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x56\x57\x41\x56\x48\x83\xEC\x40\x4D";
@@ -297,18 +285,6 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		};
 		FindUseEntity_hook = subhook_new((void*)FindUseEntity, Hook_FindUseEntity, SUBHOOK_64BIT_OFFSET);
 		subhook_install(FindUseEntity_hook);
-	}
-	
-	// CCSPP_GetMaxSpeed
-	{
-		char *sig = "\x48\x89\x5C\x24\x10\x57\x48\x83\xEC\x30\x80\xB9\xC2\x02\x00\x00\x00";
-		char *mask = "xxxxxxxxxxxxxxxxx";
-		if (!(CCSPP_GetMaxSpeed = (CCSPP_GetMaxSpeed_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-		CCSPP_GetMaxSpeed_hook = subhook_new((void*)CCSPP_GetMaxSpeed, Hook_CCSPP_GetMaxSpeed, SUBHOOK_64BIT_OFFSET);
-		subhook_install(CCSPP_GetMaxSpeed_hook);
 	}
 	
 	// InitialiseGameEntitySystem
