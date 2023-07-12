@@ -6,11 +6,6 @@
 #define PS_MAX_COUNT (75.0f / 128.0f)
 #include "mathlib/vector.h"
 
-f32 g_PrestrafeVelocity = 1.0;
-f32 g_RealVelPreMod = 1.0;
-f32 g_fVelocityModifierLastChange;
-f32 g_PrestrafeFrameCounter;
-
 
 f32 GetClientMovingDirection(CCSPlayer_MovementServices* ms, CMoveData* mv)
 {
@@ -67,7 +62,7 @@ f32 GetClientMovingDirection(CCSPlayer_MovementServices *ms, CMoveData *mv, bool
 }
 
 
-float CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv)
+f32 CalcPrestrafeVelMod(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv)
 {
 	if (!(ms->pawn->m_fFlags & FL_ONGROUND))
 	{
