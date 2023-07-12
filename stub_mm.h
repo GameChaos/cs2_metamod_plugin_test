@@ -82,7 +82,6 @@ struct PlayerData
 };
 
 
-PlayerData g_playerData[MAXPLAYERS + 1];
 extern StubPlugin g_StubPlugin;
 PLUGIN_GLOBALVARS();
 

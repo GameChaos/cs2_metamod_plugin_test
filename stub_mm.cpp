@@ -27,6 +27,7 @@ ISource2ServerConfig *serverconfig = NULL;
 IVEngineServer2 *engine = NULL;
 CGlobalVars *gpGlobals = NULL;
 CGameEntitySystem *g_entitySystem = NULL;
+PlayerData g_playerData[MAXPLAYERS + 1];
 
 #include "hooks.cpp"
 bool enableDebug = false;
