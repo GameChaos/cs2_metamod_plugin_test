@@ -172,7 +172,7 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 		strcat(buffer, GetKeyText(this_, mv));
 		DoPrintCenter(buffer);
 	}
-
+	this_->pawn->m_bTakesDamage = false;
 	CCSP_MS__ProcessMovement(this_, mv);
 	subhook_install(CCSP_MS__ProcessMovement_hook);
 }
@@ -305,6 +305,7 @@ internal void ResetPlayerData(PlayerData *pd)
 internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
 	SetupKZTimerConvars();
+	engine->ServerCommand("sv_lan true");
 	ResetPlayerData(&g_playerData[slot.Get()]);
 }
 
