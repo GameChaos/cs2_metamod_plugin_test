@@ -48,7 +48,6 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	GET_V_IFACE_CURRENT(GetServerFactory, serverconfig, ISource2ServerConfig, INTERFACEVERSION_SERVERCONFIG);
 	GET_V_IFACE_CURRENT(GetServerFactory, gameclients, ISource2GameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
 
-	gpGlobals = engine->GetServerGlobals();
 	return Hooks_HookFunctions(error, maxlen);
 }
 
@@ -294,6 +293,7 @@ internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
 
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
+	gpGlobals = engine->GetServerGlobals();
 }
 
 internal void ResetPlayerData(PlayerData *pd)
