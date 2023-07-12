@@ -141,25 +141,6 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	
 	// Detours:
 	
-	// CBaseEntity::GetGroundEntity
-	{
-		char *sig = "\x8B\x91\xC4\x03\x00\x00\x83\xFA\xFF\x74\x3F\x4C\x8B\x05";
-		char *mask = "xxxxxxxxxxxxxx";
-		if (!(CBaseEntity_GetGroundEntity = (CBaseEntity_GetGroundEntity_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-	}
-	
-	// AngleVectors
-	{
-		char *sig = "\x48\x8B\xC4\x48\x89\x58\x08\x48\x89\x70\x10\x57\x48\x83\xEC\x70\xF3\x0F\x10\x01\x49\x8B\xF0";
-		char *mask = "xxxxxxxxxxxxxxxxxxxxxxx";
-		if (!(AngleVectors_ = (AngleVectors_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-	}
 	
 	// CGameEntitySystem__EntityByIndex
 	{

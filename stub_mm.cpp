@@ -20,8 +20,6 @@
 
 class CGameEntitySystem;
 
-class CGameEntitySystem;
-
 StubPlugin g_StubPlugin;
 ISource2GameClients *gameclients = NULL;
 ISource2Server *gamedll = NULL;
@@ -38,24 +36,6 @@ f32 maxspeed = 250.0f;
 #include "kztimer.cpp"
 
 
-#define MAXPLAYERS 64
-
-#define PRE_VELMOD_MAX 1.104 // Calculated 276/250
-
-struct PlayerData
-{
-	b32 turning;
-	
-	// CCSPlayerPawnBase *pawn;
-	QAngle oldAngles;
-	
-	f32 realPreVelMod;
-	f32 preVelMod;
-	f32 preVelModLastChange;
-	f32 preCounter;
-};
-
-PlayerData g_playerData[MAXPLAYERS + 1];
 
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 
@@ -85,7 +65,6 @@ internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
 	if (enableDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
-	gpPawn = this_;
 	
 	CPlayerSlot slot = GetPlayerIndex(this_);
 	if (IsValidPlayerSlot(slot))
@@ -138,7 +117,13 @@ internal CCSP_MS__ONJUMP(Hook_CCSP_MS__OnJump)
 	}
 	if (this_->m_flJumpUntil > lastJumpUntil)
 	{
-		gfPrespeed = mv->m_vecVelocity.Length2D();	
+		CPlayerSlot slot = GetPlayerIndex(this_);
+		if (IsValidPlayerSlot(slot))
+		{
+			PlayerData* pd = &g_playerData[slot.Get()];
+
+			pd->preSpeed = mv->m_vecVelocity.Length2D();
+		}
 		if (enableDebug) META_CONPRINTF("Hook_CCSP_MS__OnJump %x | moveservice %x | pawn %x | controller %x\n", CGameEntitySystem__EntityByIndex(g_entitySystem, mv->m_nPlayerHandle.m_Index & 0x3fff), this_, this_->pawn, this_->pawn->m_hController);
 	}
 
@@ -316,10 +301,6 @@ internal void ResetPlayerData(PlayerData *pd)
 	*pd = PlayerData{};
 }
 
-internal void ResetPlayerData(PlayerData *pd)
-{
-	*pd = PlayerData{};
-}
 
 internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {

@@ -56,7 +56,33 @@ void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args);
 
 uintptr_t FindPattern(void* start, size_t maxScanBytes, char* pattern, char* ignorePattern);
 
-CBasePlayerPawn* gpPawn = NULL; // To be replaced so it works for more than one person
+#define MAXPLAYERS 64
+
+enum TurnState
+{
+	TURN_LEFT = -1,
+	TURN_NONE = 0,
+	TURN_RIGHT = 1
+};
+
+struct PlayerData
+{
+	// General
+	b32 turning;
+	f32 preSpeed;
+
+	// CCSPlayerPawnBase *pawn;
+	QAngle oldAngles;
+
+	// KZT stuff
+	f32 realPreVelMod;
+	f32 preVelMod;
+	f32 preVelModLastChange;
+	f32 preCounter;
+};
+
+
+PlayerData g_playerData[MAXPLAYERS + 1];
 extern StubPlugin g_StubPlugin;
 PLUGIN_GLOBALVARS();
 

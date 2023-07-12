@@ -1,32 +1,5 @@
 #define MAXPLAYERS 64
 
-f32 gfPrespeed = 0.0f;
-
-enum TurnState
-{
-	TURN_LEFT = -1,
-	TURN_NONE = 0,
-	TURN_RIGHT = 1
-};
-
-struct PlayerData
-{
-	// General
-	b32 turning;
-	f32 preSpeed;
-
-	// CCSPlayerPawnBase *pawn;
-	QAngle oldAngles;
-
-	// KZT stuff
-	f32 realPreVelMod;
-	f32 preVelMod;
-	f32 preVelModLastChange;
-	f32 preCounter;
-};
-
-PlayerData g_playerData[MAXPLAYERS + 1];
-
 internal b32 IsValidPlayerSlot(s32 slot)
 {
 	b32 result = slot > 0 && slot <= MAXPLAYERS;
@@ -68,7 +41,7 @@ char* GetSpeedText(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv
 	}
 	else
 	{
-		sprintf(buffer, "Speed: %.0f (%.0f)", mv->m_vecVelocity.Length2D(), gfPrespeed);
+		sprintf(buffer, "Speed: %.0f (%.0f)", mv->m_vecVelocity.Length2D(), pd->preSpeed);
 	}
 	return buffer;
 }
