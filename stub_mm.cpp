@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include "stub_mm.h"
 
-class CGameEntitySystem;
 
 StubPlugin g_StubPlugin;
 ISource2GameClients *gameclients = NULL;
@@ -43,6 +42,8 @@ PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	PLUGIN_SAVEVARS();
+	
+	MathLib_Init(2.2f, 2.2f, 0.0f, 2, false, false, false, false);
 	
 	GET_V_IFACE_CURRENT(GetEngineFactory, engine, IVEngineServer2, INTERFACEVERSION_VENGINESERVER);
 	GET_V_IFACE_CURRENT(GetServerFactory, gamedll, ISource2Server, INTERFACEVERSION_SERVERGAMEDLL);

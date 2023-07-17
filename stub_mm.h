@@ -24,6 +24,7 @@
 
 #include "subhook/subhook.h"
 
+#include "mathlib/mathlib.h"
 
 #if defined WIN32 && !defined snprintf
 #define snprintf _snprintf
