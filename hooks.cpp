@@ -99,6 +99,14 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	
 	// windows
 	char *serverbin = "../../csgo/bin/win64/server.dll";
+	// (*(*qword_7FFE486A0328 + 344i64))(qword_7FFE486A0328, v9, "cl_soundscape_flush\n");
+	// for ( result = gpGlobals; v2 < gpGlobals->maxClients; result = gpGlobals )
+	// {
+	//   if ( ++v2 >= *(result + 16) )
+	//     break;
+	//   if ( sub_7FFE479DB650(v2) )
+	//   {
+	//     v7 = sub_7FFE479DB650(v2);
 	// PlayerSlotToPlayerController
 	{
 		char *sig = "\x40\x53\x48\x83\xEC\x20\x48\x8B\x05\x27\x27\x27\x27\x48\x85\xC0\x74\x3D";
@@ -110,6 +118,9 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CEntityInstance_entindex
+	//     v23 = EntIndex(v12, &v70);
+    // Warning(
+    //   "Nav link (%d/%s) width (%0.2f) less than minimum (%0.2f) at ((%0.2f,%0.2f,%0.2f)->(%0.2f,%0.2f,%0.2f))\n",
 	{
 		char *sig = "\x40\x53\x48\x83\xEC\x20\x4C\x8B\x41\x10\x48\x8B\xDA";
 		char *mask = "xxxxxxxxxxxxx";
@@ -120,6 +131,18 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 
 	// PrintCenterTextToAll
+	// 	  qword_7FFE484B7B48 = "ScriptPrintMessageCenterAll";
+	//   v10 = 0;
+	//   do
+	//   {
+	//     if ( *(&qword_7FFE484B7B40 + v9 + 27) != 32 )
+	//       break;
+	//     ++v10;
+	//     --v9;
+	//     BYTE1(dword_7FFE484B7B58) = v10;
+	//   }
+	//   while ( v9 >= 0 );
+	//   qword_7FFE484B7B80 = sub_7FFE47799910; <- this function
 	{
 		char* sig = "\x48\x83\xEC\x38\x33\xC0\x48\x8B\xD1\x48\x89\x44\x24\x28\x45\x33\xC9\x45\x33\xC0\x48\x89\x44\x24\x20\x8D\x48\x04";
 		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -130,19 +153,10 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CGameEntitySystem__EntityByIndex
-	{
-		char *sig = "\x81\xFA\xFE\x7F\x00\x00\x77\x36";
-		char *mask = "xxxxxxxx";
-		if (!(CGameEntitySystem__EntityByIndex = (CGameEntitySystem__EntityByIndex_t *)SigScan(serverbin, sig, mask, error, maxlen)))
-		{
-			return false;
-		}
-	}
-	
-	// Detours:
-	
-	
-	// CGameEntitySystem__EntityByIndex
+	// 	    || (result = sub_7FFE47F5D3F0("door_break", v4), !result) )
+	//   {
+	//     v13 = (*(*a2 + 56i64))(a2, "entindex", 0xFFFFFFFFi64);
+	//     v6 = sub_7FFE479539C0(qword_7FFE48695008, v13); <- this function
 	{
 		char *sig = "\x81\xFA\xFE\x7F\x00\x00\x77\x36";
 		char *mask = "xxxxxxxx";
@@ -155,6 +169,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	// Detours:
 	
 	// CCSPP_PostThink
+	// [%.0f %.0f %.0f] relocated from [%.0f %.0f %.0f] in %0.1f sec (v2d = %.0f u/s)\n" "health=%d, armor=%d, helmet=%d
 	{
 		char *sig = "\x48\x8B\xC4\x48\x89\x48\x08\x55\x53\x56\x57\x41\x54\x41\x56\x41";
 		char *mask = "xxxxxxxxxxxxxxxx";
@@ -167,6 +182,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CCSP_MS__CheckJumpButton
+	// Look for sv_jump_spam_penalty_time
 	{
 		char *sig = "\x48\x89\x5C\x24\x18\x56\x48\x83\xEC\x40\x48\x8B\xF2\x48";
 		char *mask = "xxxxxxxxxxxxxx";
@@ -179,6 +195,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CCSP_MS__OnJump
+	// "player_jump"
 	{
 		char *sig = "\x40\x53\x57\x48\x81\xEC\xA8\x00\x00\x00\x48\x8B\xD9";
 		char *mask = "xxxxxxxxxxxxx";
@@ -191,6 +208,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CCSP_MS__ProcessMovement
+	// "pa start %f"
 	{
 		char* sig = "\x40\x56\x57\x48\x81\xEC\xA8\x00\x00\x00\x48\x8B\xF9";
 		char* mask = "xxxxxxxxxxxxx";
@@ -203,6 +221,17 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CCSPP_GetMaxSpeed
+	//*(a2 + 200) = sub_7FFE4786BD30(a1->pawn); <- this function
+	//   v23 = a1->pawn;
+	//   a1->m_bInStuckTest = 0;
+	//   v24 = v23->m_pCameraServices;
+	//   v25 = sub_7FFE47482320(v23);
+	//   v26 = v25;
+	//   if ( v25 )
+	//   {
+	//     EntIndex(v25, &v35);
+	//     sub_7FFE4799A200(a1, "following entity %d", v35);
+	//   }
 	{
 		char* sig = "\x48\x89\x5C\x24\x10\x57\x48\x83\xEC\x30\x80\xB9\xC2\x02\x00\x00\x00";
 		char* mask = "xxxxxxxxxxxxxxxxx";
@@ -214,7 +243,9 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		subhook_install(CCSPP_GetMaxSpeed_hook);
 	}
 		
-	// CCSP_MS__WalkMove
+	// CCSP_MS__WalkMove     
+	// sub_7FFE47863820(a1, a2, "FullWalkMovePreMove");
+	// sub_7FFE4787B4C0(a1, a2); <- this function
 	{
 		char *sig = "\x48\x8B\xC4\x48\x89\x58\x18\x48\x89\x70\x20\x55\x57\x41\x54\x48\x8D";
 		char *mask = "xxxxxxxxxxxxxxxxx";
@@ -227,6 +258,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 
 	// CCSP_MS__AirAccelerate
+	// Look for sv_air_max_wishspeed
 	{
 		char* sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x48\x89\x7C\x24\x18\x55\x48\x8D\x6C\x24\xB1";
 		char* mask = "xxxxxxxxxxxxxxxxxxxxx";
@@ -239,8 +271,9 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CCSGameConfiguration::GetTickInterval
+	// CCSGameConfiguration vtable, 2 functions after one with "csgo" string
 	{
-		char* sig = "\xF3\x0F\x10\x05\x58\xA0\x7F\x00";
+		char* sig = "\xF3\x0F\x10\x05\x38\x90\x7F\x00";
 		char* mask = "xxxxxxxx";
 		if (!(CCSGC__GetTickInterval = (CCSGC__GetTickInterval_t*)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
@@ -251,6 +284,9 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 
 	// CCSP_MS__Friction
+	// sub_7FFE47869020(a1, a2); <- this function
+	// sub_7FFE47863820(a1, a2, "FullWalkMovePreMove"); 
+	// sub_7FFE4787B4C0(a1, a2); <- the walkmove function
 	{
 		char *sig = "\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x60\x48\x8B\x41\x30";
 		char *mask = "xxxxxxxxxxxxxx";
@@ -263,6 +299,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// CreateEntity
+	// "Cannot create an entity because entity class is NULL %d\n"
 	{
 		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x56\x57\x41\x56\x48\x83\xEC\x40\x4D";
 		char *mask = "xxxxxxxxxxxxxxxxxxx";
@@ -276,6 +313,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	
 	
 	// FindUseEntity
+	// "Radial using: %s\n"
 	{
 		char* sig = "\x48\x89\x5C\x24\x18\x48\x89\x74\x24\x20\x55\x57\x41\x54\x41\x55\x41\x57\x48\x8D\xAC\x24\x50\xEB\xFF\xFF";
 		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -288,6 +326,10 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	}
 	
 	// InitialiseGameEntitySystem
+    //   v5 = sub_7FFE4792AE90(v4); <- this function
+    // else
+    //   v5 = 0;
+    // sub_7FFE47D8D450(v5, "server_entities", 0, 0, 0);
 	{
 		char *sig = "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x20\x48\x8B\xD9\xE8\xCC\xCC\xCC\xCC\x33\xFF\xC7\x83\x10";
 		char *mask = "xxxxxxxxxxxxxxxxxxx????xxxxx";

@@ -1,4 +1,4 @@
-/**
+	/**
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source Stub Plugin
@@ -224,7 +224,7 @@ internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
 		AngleVectors(angles, &forward, &right, &up);
 		
 		f32 fmove = -mv->m_flForwardMove;
-		f32 smove = mv->m_flSideMove;
+		f32 smove = -mv->m_flSideMove;
 		
 		forward[2] = 0;
 		right[2] = 0;
