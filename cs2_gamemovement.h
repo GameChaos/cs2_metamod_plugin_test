@@ -172,34 +172,38 @@ class CMoveData
 {
 public:
 	// TODO: fix offsets that were fricked due to game updates.
+	// Size is correct now.
 	uint8_t moveDataFlags; // 0x0
 	CHandle<CBasePlayerPawn> m_nPlayerHandle; // 0x4 don't know if this is actually a CHandle. <CBaseEntity> is a placeholder
-	uint8_t unknown1[0xC];
+	QAngle m_vecAbsViewAngles; // 0x8 unsure
 	QAngle m_vecViewAngles; // 0x14
+	Vector m_vecLastMovementImpulses;
 	float m_flForwardMove; // 0x20
 	float m_flSideMove; // 0x24
 	float m_flUpMove; // 0x28
-	uint8_t unknown2[0x10]; // 0x2c
-	Vector m_vecVelocity; // 0x30
-	Vector m_vecAngles; // 0x3c
-	uint8_t unknown3[0x38];
-	// these 2 vecs are used in FinishMove -> Unk21(this, ucmd, mv) -> void __fastcall sub_7FF8E0960610(CMoveData *mv)
-	Vector m_unknownVec0; // 0x80
-	Vector m_unknownVec1; // 0x8c
-	Vector m_vecAbsOrigin; // 0x98
-	uint8_t unknown5[0x4]; // 0xa4
-	Vector m_vecTrailingVelocity; // 0xa8
-	float m_flTrailingVelocityTime; // 0xb4
-	uint8_t unknown6[0x4]; // 0xb8
-	// offsets seem to be correct at least up to this point
+	float m_flSubtickFraction; // 0x38
+	Vector m_vecVelocity; // 0x3c
+	Vector m_vecAngles; // 0x48
+	uint8_t padding1[4]; //0x54 unsure
+	int m_nMovementCmdsThisTick; // 0x58 unsure, but it goes up if you spam lots of key in a tick
+	uint8_t padding2[4]; // 0x5c
+	uint8_t unknown3[8]; // 0x60 unsure, address of some sort, doesn't seem to change during gameplay
+	uint8_t unknown4[8]; // 0x68 always 0, could be padding
+	bool m_bGameCodeMovedPlayer; // 0x70 unsure
+	uint8_t padding3[4]; // 0x74
+	CUtlVector<touchlist_t> m_TouchList; // 0x78
+	Vector m_collisionNormal; // 0x90
+	Vector m_groundNormal; // 0x9c unsure
+	Vector m_vecAbsOrigin; // 0xa8
+	uint8_t padding4[4]; // 0xb4 unsure
+	bool m_nGameModeMovedPlayer; // 0xb8
+	Vector m_vecOldAngles; // 0xbc
 	float m_flMaxSpeed; // 0xc8
 	float m_flClientMaxSpeed; // 0xcc
-	
-	Vector m_vecOldAngles; // 0xbc
-	bool m_bJumpedThisTick; // 0xd0 related to dev_cs_enable_consistent_jumps
-	bool m_bSomethingWithGravity; // 0xd1 related to the new ShouldApplyGravity
-	uint8_t unknown7[0x2]; // 0xd2 Probably padding
-	Vector m_outWishVel; // 0xd4
+	float m_flSubtickAccelSpeed; // 0xd0 Related to ground acceleration subtick stuff with sv_stopspeed and friction
+	bool m_bJumpedThisTick; // 0xd4 something to do with basevelocity and the tick the player jumps
+	bool m_bSomethingWithGravity; // 0xd5 has something to do with jumping
+	Vector m_outWishVel; //0xd8
 };
-
+constexpr int a = sizeof(CMoveData);
 #endif // CS2_GAMEMOVEMENT_H

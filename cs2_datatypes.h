@@ -2169,4 +2169,48 @@ public:
 	CUtlSymbolLarge m_szDisplayText; // 0x8c0
 };
 
+
+struct RnCollisionAttr_t
+{
+	uint64 m_nInteractsAs;
+	uint64 m_nInteractsWith;
+	uint64 m_nInteractsExclude;
+	uint32 m_nEntityId;
+	uint16 m_nHierarchyId;
+	uint8 m_nCollisionGroup;
+	uint8 m_nCollisionFunctionMask;
+};
+class CBaseTraceS2
+{
+public:
+	Vector startpos;
+	Vector endpos;
+	cplane_t plane;
+	float fraction;
+	uint64_t contents;
+	bool startsolid;
+};
+
+class CGameTraceS2 : public CBaseTraceS2
+{
+public:
+	const void* m_pSurfaceProperties;
+	CBaseEntity* m_pEnt;
+	const void* m_pHitbox;
+	void* m_hBody;
+	void* m_hShape;
+	RnCollisionAttr_t m_ShapeAttributes;
+	Vector boneLocalPos;
+	Vector boneLocalNormal;
+	int m_nFaceIndex;
+	uint16_t hitboxBoneIndex;
+	uint16_t unused0;
+};
+
+typedef CGameTraceS2 trace_t_s2;
+
+struct touchlist_t {
+	Vector deltavelocity;
+	trace_t_s2 trace;
+};
 #endif // CS2_DATATYPES_H
