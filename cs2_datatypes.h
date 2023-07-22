@@ -2213,4 +2213,46 @@ struct touchlist_t {
 	Vector deltavelocity;
 	trace_t_s2 trace;
 };
+
+typedef struct con_nprint_s
+{
+	int		index;			// Row #
+	float	time_to_live;	// # of seconds before it disappears. -1 means to display for 1 frame then go away.
+	float	color[3];		// RGB colors ( 0.0 -> 1.0 scale )
+	bool	fixed_width_font;
+} con_nprint_t;
+
+abstract_class IGameUIService : public IAppSystem
+{
+public:
+	virtual void unk11();
+	virtual void unk12();
+	virtual void unk13();
+	virtual void unk14();
+	virtual void unk15();
+	virtual void unk16();
+	virtual void unk17();
+	virtual void unk18();
+	virtual void unk19();
+	virtual void unk20();
+	virtual void unk21();
+	virtual void unk22();
+	virtual void unk23();
+	virtual void unk24();
+	virtual void unk25();
+	virtual void unk26();
+	virtual void unk27();
+	virtual void unk28();
+	virtual void unk29();
+	virtual void unk30();
+	virtual void unk31();
+	virtual void unk32();
+	virtual void unk33();
+	virtual void unk34();
+	virtual void Con_PrintBottomLeft(int pos, const char* buffer, int unk);
+	virtual void unk36();
+	virtual void Con_NXPrintf(const con_nprint_t* info, const char* fmt, ...);
+	virtual void Con_NPrintf(int pos, const char* fmt, ...);
+};
+
 #endif // CS2_DATATYPES_H

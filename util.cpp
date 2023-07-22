@@ -28,6 +28,10 @@ internal void UnlockCvars()
 		while (cmd != nullptr)
 		{
 			cmd->RemoveFlags(FCVAR_DEVELOPMENTONLY | FCVAR_HIDDEN | FCVAR_PROTECTED);
+			if (!strcmp(cmd->GetName(), "playvol"))
+			{
+				cmd->AddFlags(FCVAR_SERVER_CAN_EXECUTE);
+			}
 			handle.Set(handle.Get() + 1);
 			if (g_pCVar->GetCommand(handle) == nullptr || !strcmp(cmd->GetName(), "<unknown>")) break;
 			cmd = g_pCVar->GetCommand(handle);

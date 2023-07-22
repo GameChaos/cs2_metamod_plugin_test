@@ -26,6 +26,7 @@ ISource2Server *gamedll = NULL;
 ISource2ServerConfig *serverconfig = NULL;
 IVEngineServer2 *engine = NULL;
 extern ICvar *g_pCVar;
+extern IGameUIService* g_pGameUIService;
 CGlobalVars *gpGlobals = NULL;
 CGameEntitySystem *g_entitySystem = NULL;
 PlayerData g_playerData[MAXPLAYERS + 1];
@@ -52,6 +53,7 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	GET_V_IFACE_CURRENT(GetServerFactory, serverconfig, ISource2ServerConfig, INTERFACEVERSION_SERVERCONFIG);
 	GET_V_IFACE_CURRENT(GetServerFactory, gameclients, ISource2GameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
 	GET_V_IFACE_CURRENT(GetEngineFactory, g_pCVar, ICvar, CVAR_INTERFACE_VERSION);
+	GET_V_IFACE_CURRENT(GetEngineFactory, g_pGameUIService, IGameUIService, GAMEUISERVICE_INTERFACE_VERSION);
 
 	return Hooks_HookFunctions(error, maxlen);
 }
@@ -74,9 +76,12 @@ internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 	if (IsValidPlayerSlot(slot))
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
-		if (this_->m_MoveType != MOVETYPE_WALK && this_->m_MoveType != MOVETYPE_LADDER && this_->m_MoveType != MOVETYPE_OBSERVER)
+		if (pd->timerRunning && this_->m_MoveType != MOVETYPE_WALK && this_->m_MoveType != MOVETYPE_LADDER && this_->m_MoveType != MOVETYPE_OBSERVER)
 		{
 			pd->timerRunning = false;
+			float volume = (g_pCVar->GetConVar(g_pCVar->FindConVar("volume")))->values[0].m_flValue;
+			engine->ClientCommand(0, "playvol buttons/button8.wav %f", volume);
+			DoPrintChat("Timer stopped.\n");
 		}
 		pd->oldAngles = this_->m_angEyeAngles;
 	}
@@ -170,8 +175,6 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 		pd->turning = GetTurning(pd, mv);
 		pd->realPreVelMod = CalcPrestrafeVelMod(pd, this_, mv);
 		char buffer[1024] = "";
-		strcat(buffer, GetTimerText(pd));
-		strcat(buffer, "\n");
 		strcat(buffer, GetSpeedText(pd, this_, mv));
 		strcat(buffer, "\n");
 		strcat(buffer, GetKeyText(this_, mv));
@@ -297,7 +300,8 @@ internal FINDUSEENTITY(Hook_FindUseEntity)
 		{
 			if (gpGlobals->curtime - pd->timerStartTime > 0.5)
 			{
-				engine->ClientCommand(0, "playvol buttons/button9.wav 0.1");
+				float volume = (g_pCVar->GetConVar(g_pCVar->FindConVar("volume")))->values[0].m_flValue;
+				engine->ClientCommand(0, "playvol buttons/button9.wav %f", volume);
 				DoPrintChat("Timer started\n");
 			}
 			pd->timerRunning = true;
@@ -305,7 +309,8 @@ internal FINDUSEENTITY(Hook_FindUseEntity)
 		}
 		else if (strcmp(ent->m_pEntity->m_name.String(), "climb_endbutton") == 0 && pd->timerRunning)
 		{
-			engine->ClientCommand(0, "playvol buttons/bell1.wav 0.1");
+			float volume = (g_pCVar->GetConVar(g_pCVar->FindConVar("volume")))->values[0].m_flValue;
+			engine->ClientCommand(0, "playvol buttons/bell1.wav %f", volume);
 			char buffer[12];
 			pd->timerRunning = false;
 			float time = gpGlobals->curtime - pd->timerStartTime;
@@ -347,6 +352,17 @@ internal INITIALISEGAMEENTITYSYSTEM(Hook_InitialiseGameEntitySystem)
 internal void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
 	gpGlobals = engine->GetServerGlobals();
+	PlayerData* pd = &g_playerData[1]; // Hardcoding
+	con_nprint_t info;
+	info.index = 0;
+	info.time_to_live = gpGlobals->interval_per_tick;
+	info.color[0] = 1.0;
+	info.color[1] = 1.0;
+	info.color[2] = 1.0;
+	info.fixed_width_font = true;
+	char buffer[128] = "";
+	strcat(buffer, GetTimerText(pd));
+	g_pGameUIService->Con_NXPrintf(&info, "%s\n", buffer);
 }
 
 internal void ResetPlayerData(PlayerData *pd)
@@ -360,6 +376,11 @@ internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 	UnlockCvars();
 	SetupKZTimerConvars();
 	engine->ServerCommand("sv_lan true");
+	engine->ServerCommand("game_mode 0");
+	engine->ServerCommand("mp_warmup_offline_enabled false");
+	engine->ServerCommand("mp_ignore_round_win_conditions true");
+	engine->ServerCommand("mp_freezetime 0");
+	engine->ServerCommand("mp_round_restart_delay 0");
 	ResetPlayerData(&g_playerData[slot.Get()]);
 }
 
