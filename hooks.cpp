@@ -11,8 +11,10 @@ PlayerSlotToPlayerController_t *PlayerSlotToPlayerController = NULL;
 typedef void CEntityInstance_entindex_t(CEntityInstance *this_, CEntityIndex *out);
 CEntityInstance_entindex_t *CEntityInstance_entindex = NULL;
 
-typedef void PrintCenterTextToAll_t(char* buffer);
-PrintCenterTextToAll_t *PrintCenterTextToAll = NULL;
+typedef void PrintTextToAll_t(char* buffer);
+PrintTextToAll_t *PrintCenterTextToAll = NULL;
+PrintTextToAll_t *PrintChatToAll = NULL;
+
 
 typedef CBaseEntity *CGameEntitySystem__EntityByIndex_t(CGameEntitySystem* entSystem, int index);
 CGameEntitySystem__EntityByIndex_t *CGameEntitySystem__EntityByIndex = NULL;
@@ -55,9 +57,15 @@ internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove);
 
 #define CCSP_MS__AIRACCELERATE(name) void name(CCSPlayer_MovementServices *this_, CMoveData *mv, Vector& wishdir, float wishspeed, float accel)
 typedef CCSP_MS__AIRACCELERATE(CCSP_MS__AirAccelerate_t);
-CCSP_MS__AirAccelerate_t* CCSP_MS__AirAccelerate = NULL;
+CCSP_MS__AirAccelerate_t *CCSP_MS__AirAccelerate = NULL;
 subhook_t CCSP_MS__AirAccelerate_hook;
 internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate);
+
+#define CCSP_MS__TRYPLAYERMOVE(name) int name(CCSPlayer_MovementServices *this_, CMoveData *mv, Vector *pFirstDest, trace_t *pFirstTrace)
+typedef CCSP_MS__TRYPLAYERMOVE(CCSP_MS__TryPlayerMove_t);
+CCSP_MS__TryPlayerMove_t *CCSP_MS__TryPlayerMove = NULL;
+subhook_t CCSP_MS__TryPlayerMove_hook;
+internal CCSP_MS__TRYPLAYERMOVE(Hook_CCSP_MS__TryPlayerMove);
 
 #define CCSGC__GETTICKINTERVAL(name) f32 name(void *this_)
 typedef CCSGC__GETTICKINTERVAL(CCSGC__GetTickInterval_t);
@@ -146,12 +154,20 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 	{
 		char* sig = "\x48\x83\xEC\x38\x33\xC0\x48\x8B\xD1\x48\x89\x44\x24\x28\x45\x33\xC9\x45\x33\xC0\x48\x89\x44\x24\x20\x8D\x48\x04";
 		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-		if (!(PrintCenterTextToAll = (PrintCenterTextToAll_t*)SigScan(serverbin, sig, mask, error, maxlen)))
+		if (!(PrintCenterTextToAll = (PrintTextToAll_t*)SigScan(serverbin, sig, mask, error, maxlen)))
 		{
 			return false;
 		};
 	}
 	
+	{
+		char* sig = "\x48\x83\xEC\x38\x33\xC0\x48\x8B\xD1\x48\x89\x44\x24\x28\x45\x33\xC9\x45\x33\xC0\x48\x89\x44\x24\x20\x8D\x48\x03";
+		char* mask = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+		if (!(PrintChatToAll = (PrintTextToAll_t*)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		};
+	}
 	// CGameEntitySystem__EntityByIndex
 	// 	    || (result = sub_7FFE47F5D3F0("door_break", v4), !result) )
 	//   {
@@ -165,7 +181,7 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 			return false;
 		}
 	}
-	
+
 	// Detours:
 	
 	// CCSPP_PostThink
@@ -270,10 +286,22 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		subhook_install(CCSP_MS__AirAccelerate_hook);
 	}
 	
+	// CCSP_MS__TryPlayerMove
+	// "CCSPlayer_MovementServices::TryPlayerMove() Trace ended stuck"
+	{
+		char* sig = "\x48\x8B\xC4\x48\x89\x58\x08\x4C\x89\x48\x20\x4C\x89\x40\x18\x48\x89\x50\x10";
+		char* mask = "xxxxxxxxxxxxxxxxxxx";
+		if (!(CCSP_MS__TryPlayerMove = (CCSP_MS__TryPlayerMove_t*)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+		CCSP_MS__TryPlayerMove_hook = subhook_new((void*)CCSP_MS__TryPlayerMove, Hook_CCSP_MS__TryPlayerMove, SUBHOOK_64BIT_OFFSET);
+		subhook_install(CCSP_MS__TryPlayerMove_hook);
+	}
 	// CCSGameConfiguration::GetTickInterval
 	// CCSGameConfiguration vtable, 2 functions after one with "csgo" string
 	{
-		char* sig = "\xF3\x0F\x10\x05\x38\x90\x7F\x00";
+		char* sig = "\xF3\x0F\x10\x05\xC8\x8A\x7F\x00";
 		char* mask = "xxxxxxxx";
 		if (!(CCSGC__GetTickInterval = (CCSGC__GetTickInterval_t*)SigScan(serverbin, sig, mask, error, maxlen)))
 		{

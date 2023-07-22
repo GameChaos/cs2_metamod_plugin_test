@@ -18,12 +18,14 @@
 #include <stdio.h>
 #include "stub_mm.h"
 
+class CGameEntitySystem;
 
 StubPlugin g_StubPlugin;
 ISource2GameClients *gameclients = NULL;
 ISource2Server *gamedll = NULL;
 ISource2ServerConfig *serverconfig = NULL;
 IVEngineServer2 *engine = NULL;
+extern ICvar *g_pCVar;
 CGlobalVars *gpGlobals = NULL;
 CGameEntitySystem *g_entitySystem = NULL;
 PlayerData g_playerData[MAXPLAYERS + 1];
@@ -49,6 +51,7 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	GET_V_IFACE_CURRENT(GetServerFactory, gamedll, ISource2Server, INTERFACEVERSION_SERVERGAMEDLL);
 	GET_V_IFACE_CURRENT(GetServerFactory, serverconfig, ISource2ServerConfig, INTERFACEVERSION_SERVERCONFIG);
 	GET_V_IFACE_CURRENT(GetServerFactory, gameclients, ISource2GameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
+	GET_V_IFACE_CURRENT(GetEngineFactory, g_pCVar, ICvar, CVAR_INTERFACE_VERSION);
 
 	return Hooks_HookFunctions(error, maxlen);
 }
@@ -66,12 +69,15 @@ internal CCSPLAYERPAWN_POSTTHINK(Hook_CCSPP_PostThink)
 	subhook_remove(CCSPP_PostThink_hook);
 	CCSPP_PostThink(this_);
 	if (enableDebug && gpGlobals->tickcount % 64 == 0) META_CONPRINTF("%i PostThink  %x\n", gpGlobals->tickcount, this_);
-	
+
 	CPlayerSlot slot = GetPlayerIndex(this_);
 	if (IsValidPlayerSlot(slot))
 	{
 		PlayerData *pd = &g_playerData[slot.Get()];
-		
+		if (this_->m_MoveType != MOVETYPE_WALK && this_->m_MoveType != MOVETYPE_LADDER && this_->m_MoveType != MOVETYPE_OBSERVER)
+		{
+			pd->timerRunning = false;
+		}
 		pd->oldAngles = this_->m_angEyeAngles;
 	}
 	
@@ -92,8 +98,7 @@ internal CCSP_MS__CHECKJUMPBUTTON(Hook_CCSP_MS__CheckJumpButton)
 internal CCSP_MS__WALKMOVE(Hook_CCSP_MS__WalkMove)
 {
 	subhook_remove(CCSP_MS__WalkMove_hook);
-	
-	CCSP_MS__WalkMove(this_, mv);	
+	CCSP_MS__WalkMove(this_, mv);
 	subhook_install(CCSP_MS__WalkMove_hook);
 }
 
@@ -130,6 +135,7 @@ internal void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args)
 	if (strcmp(args[0], "toggledebug") == 0)
 	{
 		enableDebug = !enableDebug;
+		DoPrintChat("enableDebug %s\n", enableDebug ? "on" : "off");
 		DoPrintCenter("enableDebug %s\n", enableDebug ? "on" : "off");
 		RETURN_META(MRES_SUPERCEDE);
 	}
@@ -159,10 +165,13 @@ internal CCSP_MS__PROCESSMOVEMENT(Hook_CCSP_MS__ProcessMovement)
 	CPlayerSlot slot = GetPlayerIndex(this_);
 	if (IsValidPlayerSlot(slot))
 	{
+		if (mv->m_nMovementCmdsThisTick > 0 && enableDebug) META_CONPRINTF("[%f] numCmd = %i\n", gpGlobals->curtime, mv->m_nMovementCmdsThisTick);
 		PlayerData *pd = &g_playerData[slot.Get()];
 		pd->turning = GetTurning(pd, mv);
 		pd->realPreVelMod = CalcPrestrafeVelMod(pd, this_, mv);
 		char buffer[1024] = "";
+		strcat(buffer, GetTimerText(pd));
+		strcat(buffer, "\n");
 		strcat(buffer, GetSpeedText(pd, this_, mv));
 		strcat(buffer, "\n");
 		strcat(buffer, GetKeyText(this_, mv));
@@ -253,6 +262,14 @@ internal CCSP_MS__AIRACCELERATE(Hook_CCSP_MS__AirAccelerate)
 	subhook_install(CCSP_MS__AirAccelerate_hook);
 }
 
+internal CCSP_MS__TRYPLAYERMOVE(Hook_CCSP_MS__TryPlayerMove)
+{
+	subhook_remove(CCSP_MS__TryPlayerMove_hook);
+	int result = CCSP_MS__TryPlayerMove(this_, mv, pFirstDest, pFirstTrace);
+	subhook_install(CCSP_MS__TryPlayerMove_hook);
+	return result;
+}
+
 internal CREATEENTITY(Hook_CreateEntity)
 {
 	subhook_remove(CreateEntity_hook);
@@ -272,11 +289,47 @@ internal FINDUSEENTITY(Hook_FindUseEntity)
 {
 	subhook_remove(FindUseEntity_hook);
 	CBaseEntity *ent = FindUseEntity(us);
-	META_CONPRINTF("%i FindUseEnt: %s\n", GetPlayerIndex(us->pawn), ent ? ent->m_pEntity->m_name.String():"");
-	//if (ent && !strcmp(ent->m_pEntity->m_name.String(), "climb_startbutton"))
-	//{
-	//	g_SMAPI->ClientConPrintf(1, "say TIMER STARTED");
-	//}
+	s32 client = GetPlayerIndex(us->pawn);
+	if (ent != NULL && ent->m_pEntity != NULL && ent->m_pEntity->m_name.String() != NULL)
+	{
+		PlayerData* pd = &g_playerData[client];
+		if (strcmp(ent->m_pEntity->m_name.String(), "climb_startbutton") == 0)
+		{
+			if (gpGlobals->curtime - pd->timerStartTime > 0.5)
+			{
+				engine->ClientCommand(0, "playvol buttons/button9.wav 0.1");
+				DoPrintChat("Timer started\n");
+			}
+			pd->timerRunning = true;
+			pd->timerStartTime = gpGlobals->curtime;
+		}
+		else if (strcmp(ent->m_pEntity->m_name.String(), "climb_endbutton") == 0 && pd->timerRunning)
+		{
+			engine->ClientCommand(0, "playvol buttons/bell1.wav 0.1");
+			char buffer[12];
+			pd->timerRunning = false;
+			float time = gpGlobals->curtime - pd->timerStartTime;
+			int roundedTime = floor(time * 100); // Time rounded to number of centiseconds
+
+			int centiseconds = roundedTime % 100;
+			roundedTime = (roundedTime - centiseconds) / 100;
+			int seconds = roundedTime % 60;
+			roundedTime = (roundedTime - seconds) / 60;
+			int minutes = roundedTime % 60;
+			roundedTime = (roundedTime - minutes) / 60;
+			int hours = roundedTime;
+
+			if (hours == 0)
+			{
+				snprintf(buffer, sizeof(buffer), "%02i:%02i.%02i", minutes, seconds, centiseconds);
+			}
+			else
+			{
+				snprintf(buffer, sizeof(buffer), "%i:%02i:%02i.%02i", hours, minutes, seconds, centiseconds);
+			}
+			DoPrintChat("Player finished in %s\n", buffer);
+		}
+	}
 	subhook_install(FindUseEntity_hook);
 	return ent;
 }
@@ -304,6 +357,7 @@ internal void ResetPlayerData(PlayerData *pd)
 
 internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 {
+	UnlockCvars();
 	SetupKZTimerConvars();
 	engine->ServerCommand("sv_lan true");
 	ResetPlayerData(&g_playerData[slot.Get()]);
@@ -311,11 +365,6 @@ internal void Hook_ClientFullyConnect(CPlayerSlot slot)
 
 internal float Hook_ProcessUsercmds(CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused)
 {
-	if (gpGlobals->tickcount % 128 == 0) 
-	{
-		engine->ClientCommand(0, "say TIMER STARTED for %i\n", slot.Get());
-		META_CONPRINTF("Check %i\n", slot.Get());
-	}
 	RETURN_META_VALUE(MRES_IGNORED, 0.0f);
 }
 

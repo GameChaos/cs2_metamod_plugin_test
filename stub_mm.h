@@ -80,6 +80,10 @@ struct PlayerData
 	f32 preVelMod;
 	f32 preVelModLastChange;
 	f32 preCounter;
+
+	// Timer stuff
+	f32 timerStartTime;
+	b32 timerRunning;
 };
 
 

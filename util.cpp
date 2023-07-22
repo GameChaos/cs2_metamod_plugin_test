@@ -1,5 +1,42 @@
 #define MAXPLAYERS 64
 
+internal void UnlockCvars()
+{
+	static b32 alreadyUnlocked;
+	if (alreadyUnlocked) return;
+
+	{
+		ConVarHandle handle;
+		handle.Set(0);
+
+		ConVar* cvar = g_pCVar->GetConVar(handle);
+		while (cvar != nullptr)
+		{
+			cvar->flags = cvar->flags & ~FCVAR_DEVELOPMENTONLY;
+			cvar->flags = cvar->flags & ~FCVAR_HIDDEN;
+			cvar->flags = cvar->flags & ~FCVAR_PROTECTED;
+			handle.Set(handle.Get() + 1);
+			if (g_pCVar->GetConVar(handle) == nullptr) break;
+			cvar = g_pCVar->GetConVar(handle);
+		}
+	}
+
+	{
+		ConCommandHandle handle;
+		handle.Set(0);
+		ConCommand *cmd = g_pCVar->GetCommand(handle);
+		while (cmd != nullptr)
+		{
+			cmd->RemoveFlags(FCVAR_DEVELOPMENTONLY | FCVAR_HIDDEN | FCVAR_PROTECTED);
+			handle.Set(handle.Get() + 1);
+			if (g_pCVar->GetCommand(handle) == nullptr || !strcmp(cmd->GetName(), "<unknown>")) break;
+			cmd = g_pCVar->GetCommand(handle);
+		}
+	}
+	
+	alreadyUnlocked = true;
+}
+
 internal b32 IsValidPlayerSlot(s32 slot)
 {
 	b32 result = slot > 0 && slot <= MAXPLAYERS;
@@ -30,6 +67,39 @@ b32 IsButtonDown(CInButtonState buttons, InputBitMask_t button, bool checkStillP
 		result |= buttons.m_pButtonStates[1] & button || buttons.m_pButtonStates[2] & button;
 	}
 	return result;
+}
+
+char* GetTimerText(PlayerData* pd)
+{
+	char buffer[48];
+	if (pd->timerRunning)
+	{
+		float time = gpGlobals->curtime - pd->timerStartTime;
+		int roundedTime = floor(time * 100); // Time rounded to number of centiseconds
+
+		int centiseconds = roundedTime % 100;
+		roundedTime = (roundedTime - centiseconds) / 100;
+		int seconds = roundedTime % 60;
+		roundedTime = (roundedTime - seconds) / 60;
+		int minutes = roundedTime % 60;
+		roundedTime = (roundedTime - minutes) / 60;
+		int hours = roundedTime;
+
+		if (hours == 0)
+		{
+			snprintf(buffer, sizeof(buffer), "Time: %02i:%02i.%02i", minutes, seconds, centiseconds);
+		}
+		else
+		{
+			snprintf(buffer, sizeof(buffer), "Time: %i:%02i:%02i.%02i", hours, minutes, seconds, centiseconds);
+		}
+		return buffer;
+	}
+	else
+	{
+		snprintf(buffer, sizeof(buffer), "Time: Stopped");
+	}
+	return buffer;
 }
 
 char* GetSpeedText(PlayerData *pd, CCSPlayer_MovementServices *ms, CMoveData *mv)
@@ -73,6 +143,22 @@ void DoPrintCenter(const char* fmt, ...)
 	}
 	va_end(ap);
 	PrintCenterTextToAll(buffer);
+}
+
+void DoPrintChat(const char* fmt, ...)
+{
+	va_list ap;
+	char buffer[2048];
+
+	va_start(ap, fmt);
+	int len = vsnprintf(buffer, sizeof(buffer), fmt, ap);
+	if (len >= 2048)
+	{
+		len = 2047;
+		buffer[len] = '\0';
+	}
+	va_end(ap);
+	PrintChatToAll(buffer);
 }
 
 // Returns the player slot / entindex corresponding to the object.
