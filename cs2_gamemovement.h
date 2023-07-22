@@ -205,5 +205,4 @@ public:
 	bool m_bSomethingWithGravity; // 0xd5 has something to do with jumping
 	Vector m_outWishVel; //0xd8
 };
-constexpr int a = sizeof(CMoveData);
 #endif // CS2_GAMEMOVEMENT_H
