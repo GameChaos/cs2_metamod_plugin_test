@@ -15,6 +15,8 @@ typedef void PrintTextToAll_t(char* buffer);
 PrintTextToAll_t *PrintCenterTextToAll = NULL;
 PrintTextToAll_t *PrintChatToAll = NULL;
 
+typedef void CBaseAnimGraph__Teleport_t(CBaseAnimGraph const *this_, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity);
+CBaseAnimGraph__Teleport_t *CBaseAnimGraph__Teleport = NULL;
 
 typedef CBaseEntity *CGameEntitySystem__EntityByIndex_t(CGameEntitySystem* entSystem, int index);
 CGameEntitySystem__EntityByIndex_t *CGameEntitySystem__EntityByIndex = NULL;
@@ -182,6 +184,14 @@ internal bool Hooks_HookFunctions(char *error, size_t maxlen)
 		}
 	}
 
+	{
+		char* sig = "\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x48\x8B\xD9\xE8\x27\x27\x27\x27\x48\x8B\x8B\x48\x02\x00\x00\x48\x8B\x01\xFF\x50\x40\x33\xDB";
+		char* mask = "xxxxxxxxxxxxxx....xxxxxxxxxxxxxxx";
+		if (!(CBaseAnimGraph__Teleport = (CBaseAnimGraph__Teleport_t*)SigScan(serverbin, sig, mask, error, maxlen)))
+		{
+			return false;
+		}
+	}
 	// Detours:
 	
 	// CCSPP_PostThink

@@ -213,19 +213,20 @@ CBasePlayerController* GetPawnController(CBasePlayerPawn *pawn)
 void LoadCheckpoint(CCSPlayerPawn *pawn, PlayerData *pd)
 {
 	CPlayerSlot slot = GetPlayerIndex(pawn);
-	Checkpoint* cp = pd->checkpoints[pd->checkpoints.Count() - 1];
-	pd->lastOrigin = cp->origin;
-	pd->lastAngle = cp->angles;
+	Checkpoint cp = pd->checkpoints[pd->checkpoints.Count() - 1];
+	pd->lastOrigin = cp.origin;
+	pd->lastAngle = cp.angles;
 	pd->teleportTime = gpGlobals->curtime;
-	pawn->m_pSceneNode->m_vecAbsOrigin = cp->origin;
-	pawn->v_angle = cp->angles;
-	if (cp->groundEnt.m_Index != 0xffffffff)
+	Vector newVelocity;
+	newVelocity.Init();
+	CBaseAnimGraph__Teleport(pawn, &cp.origin, &cp.angles, &newVelocity);
+	if (cp.groundEnt.m_Index != 0xffffffff)
 	{
-		pawn->m_hGroundEntity = cp->groundEnt;
+		pawn->m_hGroundEntity = cp.groundEnt;
 	}
-	if (cp->onLadder)
+	if (cp.onLadder)
 	{
-		static_cast<CCSPlayer_MovementServices*>(pawn->m_pMovementServices)->m_vecLadderNormal = cp->ladderNormal;
+		static_cast<CCSPlayer_MovementServices*>(pawn->m_pMovementServices)->m_vecLadderNormal = cp.ladderNormal;
 		pawn->m_MoveType = MOVETYPE_LADDER;
 	}
 }

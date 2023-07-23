@@ -75,6 +75,9 @@ public:
 	bool onLadder;
 	CHandle< CBaseEntity > groundEnt; // 0x3c4
 
+	Checkpoint()
+	{
+	}
 	Checkpoint(CCSPlayerPawn* pawn)
 	{
 		this->origin = pawn->m_pSceneNode->m_vecAbsOrigin;
@@ -85,8 +88,9 @@ public:
 	}
 };
 
-struct PlayerData
+class PlayerData
 {
+public:
 	// General
 	b32 turning;
 	f32 preSpeed;
@@ -105,10 +109,16 @@ struct PlayerData
 	b32 timerRunning;
 	
 	// CP/Teleport stuff
-	CUtlVector<Checkpoint*> checkpoints;
+	CUtlVector<Checkpoint> checkpoints;
 	f32 teleportTime;
 	Vector lastOrigin;
 	QAngle lastAngle;
+
+	void MakeCheckpoint(CCSPlayerPawn* pawn)
+	{
+		int i = this->checkpoints.AddToTail();
+		this->checkpoints[i] = Checkpoint(pawn);
+	}
 };
 
 extern StubPlugin g_StubPlugin;

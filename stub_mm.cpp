@@ -166,9 +166,7 @@ internal void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args)
 		PlayerData *pd = &g_playerData[slot.Get()];
 		uint32_t handle = controller->m_hPawn.m_Index & 0x3fff;
 		CCSPlayerPawn *pawn = static_cast<CCSPlayerPawn*>(CGameEntitySystem__EntityByIndex(g_entitySystem, handle));
-		int i = pd->checkpoints.AddToTail();
-		pd->checkpoints[i] = &Checkpoint(pawn);
-
+		pd->MakeCheckpoint(pawn);
 		float volume = (g_pCVar->GetConVar(g_pCVar->FindConVar("volume")))->values[0].m_flValue;
 		engine->ClientCommand(0, "playvol buttons/blip1.wav %f", volume);
 
@@ -217,6 +215,7 @@ internal CCSPP_GETMAXSPEED(Hook_CCSPP_GetMaxSpeed)
 	CPlayerSlot slot = GetPlayerIndex(this_);
 	if (IsValidPlayerSlot(slot))
 	{
+		PlayerData *pd2 = &g_playerData[slot.Get() - 1];
 		PlayerData *pd = &g_playerData[slot.Get()];
 		return 250.0f * pd->realPreVelMod;
 	}
