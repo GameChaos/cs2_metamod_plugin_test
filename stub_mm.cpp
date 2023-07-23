@@ -146,6 +146,10 @@ internal void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args)
 	}
 	else if (strcmp(args[0], "gettickrate") == 0)
 	{
+		CBasePlayerController* controller = PlayerSlotToPlayerController(slot);
+		PlayerData* pd = &g_playerData[slot.Get()];
+		uint32_t handle = controller->m_hPawn.m_Index & 0x3fff;
+		CCSPlayerPawn* pawn = static_cast<CCSPlayerPawn*>(CGameEntitySystem__EntityByIndex(g_entitySystem, handle));
 		META_CONPRINTF("Current tickrate: %f", tickrate);
 		RETURN_META(MRES_SUPERCEDE);
 	}
@@ -154,6 +158,29 @@ internal void Hook_ClientCommand(CPlayerSlot slot, const CCommand& args)
 		// Engine defined min/max tickrate
 		tickrate = clamp(atof(args[1]), 10, 1000);
 		META_CONPRINTF("New tickrate: %f. Please change the map to apply the new tickrate.\n", tickrate);
+		RETURN_META(MRES_SUPERCEDE);
+	}
+	else if (strcmp(args[0], "kz_checkpoint") == 0)
+	{
+		CBasePlayerController *controller = PlayerSlotToPlayerController(slot);
+		PlayerData *pd = &g_playerData[slot.Get()];
+		uint32_t handle = controller->m_hPawn.m_Index & 0x3fff;
+		CCSPlayerPawn *pawn = static_cast<CCSPlayerPawn*>(CGameEntitySystem__EntityByIndex(g_entitySystem, handle));
+		int i = pd->checkpoints.AddToTail();
+		pd->checkpoints[i] = &Checkpoint(pawn);
+
+		float volume = (g_pCVar->GetConVar(g_pCVar->FindConVar("volume")))->values[0].m_flValue;
+		engine->ClientCommand(0, "playvol buttons/blip1.wav %f", volume);
+
+		RETURN_META(MRES_SUPERCEDE);
+	}
+	else if (strcmp(args[0], "kz_gocheck") == 0)
+	{
+		CBasePlayerController* controller = PlayerSlotToPlayerController(slot);
+		PlayerData* pd = &g_playerData[slot.Get()];
+		uint32_t handle = controller->m_hPawn.m_Index & 0x3fff;
+		CCSPlayerPawn* pawn = static_cast<CCSPlayerPawn*>(CGameEntitySystem__EntityByIndex(g_entitySystem, handle));
+		LoadCheckpoint(pawn, pd);
 		RETURN_META(MRES_SUPERCEDE);
 	}
 	RETURN_META(MRES_IGNORED);
@@ -302,6 +329,7 @@ internal FINDUSEENTITY(Hook_FindUseEntity)
 			{
 				float volume = (g_pCVar->GetConVar(g_pCVar->FindConVar("volume")))->values[0].m_flValue;
 				engine->ClientCommand(0, "playvol buttons/button9.wav %f", volume);
+				pd->checkpoints.RemoveAll();
 				DoPrintChat("Timer started\n");
 			}
 			pd->timerRunning = true;

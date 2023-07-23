@@ -747,7 +747,7 @@ public:
 	CUtlVector< thinkfunc_t > m_aThinkFunctions; // 0x228
 	int32_t m_iCurrentThinkContext; // 0x240
 	GameTick_t m_nLastThinkTick; // 0x244
-	uint8_t __pad0248[0x8]; // 0x248
+	CGameSceneNode *m_pSceneNode; // 0x248
 	CBitVec< 64 > m_isSteadyState; // 0x250
 	float m_lastNetworkChange; // 0x258
 	uint8_t __pad025c[0xc]; // 0x25c

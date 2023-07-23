@@ -66,6 +66,25 @@ enum TurnState
 	TURN_RIGHT = 1
 };
 
+class Checkpoint
+{
+public:
+	Vector origin;
+	QAngle angles;
+	Vector ladderNormal;
+	bool onLadder;
+	CHandle< CBaseEntity > groundEnt; // 0x3c4
+
+	Checkpoint(CCSPlayerPawn* pawn)
+	{
+		this->origin = pawn->m_pSceneNode->m_vecAbsOrigin;
+		this->angles = pawn->v_angle;
+		this->ladderNormal = static_cast<CCSPlayer_MovementServices*>(pawn->m_pMovementServices)->m_vecLadderNormal;
+		this->onLadder = pawn->m_MoveType == MOVETYPE_LADDER;
+		this->groundEnt = pawn->m_hGroundEntity;
+	}
+};
+
 struct PlayerData
 {
 	// General
@@ -84,8 +103,13 @@ struct PlayerData
 	// Timer stuff
 	f32 timerStartTime;
 	b32 timerRunning;
+	
+	// CP/Teleport stuff
+	CUtlVector<Checkpoint*> checkpoints;
+	f32 teleportTime;
+	Vector lastOrigin;
+	QAngle lastAngle;
 };
-
 
 extern StubPlugin g_StubPlugin;
 PLUGIN_GLOBALVARS();
