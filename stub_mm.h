@@ -88,6 +88,12 @@ public:
 	}
 };
 
+struct StartPosition
+{
+	Vector origin;
+	QAngle angles;
+};
+
 class PlayerData
 {
 public:
@@ -107,6 +113,10 @@ public:
 	// Timer stuff
 	f32 timerStartTime;
 	b32 timerRunning;
+	b32 hasStartPosition;
+	StartPosition autoStartPos;
+	b32 hasCustomStartPosition;
+	StartPosition startPos;
 	
 	// CP/Teleport stuff
 	CUtlVector<Checkpoint> checkpoints;
@@ -114,10 +124,28 @@ public:
 	Vector lastOrigin;
 	QAngle lastAngle;
 
-	void MakeCheckpoint(CCSPlayerPawn* pawn)
+	void MakeCheckpoint(CCSPlayerPawn *pawn)
 	{
 		int i = this->checkpoints.AddToTail();
 		this->checkpoints[i] = Checkpoint(pawn);
+	}
+
+	void SetAutoStartPosition(CCSPlayerPawn* pawn)
+	{
+		this->hasStartPosition = true;
+		this->autoStartPos.origin = pawn->m_pSceneNode->m_vecAbsOrigin;
+		this->autoStartPos.angles = pawn->v_angle;
+	}
+	void SetStartPosition(CCSPlayerPawn *pawn)
+	{
+		this->hasCustomStartPosition = true;
+		this->startPos.origin = pawn->m_pSceneNode->m_vecAbsOrigin;
+		this->startPos.angles = pawn->v_angle;
+	}
+
+	void DisableStartPosition()
+	{
+		this->hasCustomStartPosition = false;
 	}
 };
 

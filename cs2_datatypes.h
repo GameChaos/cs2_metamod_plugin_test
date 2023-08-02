@@ -2169,7 +2169,6 @@ public:
 	CUtlSymbolLarge m_szDisplayText; // 0x8c0
 };
 
-
 struct RnCollisionAttr_t
 {
 	uint64 m_nInteractsAs;
@@ -2180,6 +2179,7 @@ struct RnCollisionAttr_t
 	uint8 m_nCollisionGroup;
 	uint8 m_nCollisionFunctionMask;
 };
+
 class CBaseTraceS2
 {
 public:

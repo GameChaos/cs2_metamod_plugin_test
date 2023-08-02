@@ -18,7 +18,7 @@ static uintptr_t SigScan(char *binPath, char *pattern, char *ignorePattern, char
 #error Only windows supported.
 #endif
 
-static uintptr_t SigScanMemory(void *start, size_t maxScanBytes, char *pattern, char *ignorePattern)
+static uintptr_t SigScanMemory(void *start, size_t maxScanBytes, const char *pattern, const char *ignorePattern)
 {
 	uintptr_t patternLen = strlen(ignorePattern);
 	
@@ -38,7 +38,7 @@ static uintptr_t SigScanMemory(void *start, size_t maxScanBytes, char *pattern, 
 	return NULL;
 }
 
-static uintptr_t SigScan(char *binPath, char *pattern, char *ignorePattern, char *error, size_t errorMaxlen)
+static uintptr_t SigScan(const char *binPath, const char *pattern, const char *ignorePattern, char *error, size_t errorMaxlen)
 {
 #ifdef _WIN32
 	HMODULE bin = LoadLibrary(binPath);

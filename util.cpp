@@ -213,6 +213,11 @@ CBasePlayerController* GetPawnController(CBasePlayerPawn *pawn)
 void LoadCheckpoint(CCSPlayerPawn *pawn, PlayerData *pd)
 {
 	CPlayerSlot slot = GetPlayerIndex(pawn);
+	if (pd->checkpoints.Count() == 0)
+	{
+		DoPrintChat("No checkpoint available.\n");
+		return;
+	}
 	Checkpoint cp = pd->checkpoints[pd->checkpoints.Count() - 1];
 	pd->lastOrigin = cp.origin;
 	pd->lastAngle = cp.angles;

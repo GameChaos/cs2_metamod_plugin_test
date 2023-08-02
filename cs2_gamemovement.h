@@ -202,7 +202,7 @@ public:
 	float m_flClientMaxSpeed; // 0xcc
 	float m_flSubtickAccelSpeed; // 0xd0 Related to ground acceleration subtick stuff with sv_stopspeed and friction
 	bool m_bJumpedThisTick; // 0xd4 something to do with basevelocity and the tick the player jumps
-	bool m_bSomethingWithGravity; // 0xd5 has something to do with jumping
+	bool m_bShouldApplyGravity; // 0xd5
 	Vector m_outWishVel; //0xd8
 };
 #endif // CS2_GAMEMOVEMENT_H
