@@ -128,78 +128,78 @@ public:
 	bool m_duckUntilOnGround; // 0x268	
 	bool m_bHasWalkMovedSinceLastJump; // 0x269	
 	bool m_bInStuckTest; // 0x26a	
-	uint8_t __pad026b[0x5]; // 0x26b
-	uint64_t m_CachedGetPointContents[3][64]; // 0x270	
-	Vector m_CachedGetPointContentsPoint[3][64]; // 0x870	
-	uint8_t __pad1170[0x8]; // 0x1170
-	float m_flStuckCheckTime[2][64]; // 0x1178	
-	int32_t m_nTraceCount; // 0x1378	
-	int32_t m_StuckLast; // 0x137c	
-	bool m_bSpeedCropped; // 0x1380	
-	uint8_t __pad1381[0x3]; // 0x1381
-	int32_t m_nOldWaterLevel; // 0x1384	
-	float m_flWaterEntryTime; // 0x1388	
-	Vector m_vecForward; // 0x138c	
-	Vector m_vecLeft; // 0x1398	
-	Vector m_vecUp; // 0x13a4	
-	Vector m_vecPreviouslyPredictedOrigin; // 0x13b0	
-	bool m_bMadeFootstepNoise; // 0x13bc	
-	uint8_t __pad13bd[0x3]; // 0x13bd
-	int32_t m_iFootsteps; // 0x13c0	
-	int32_t m_nRoundFootstepsMade; // 0x13c4	
+	uint8_t __pad026b[0xd]; // 0x26b
+	float m_flStuckCheckTime[2][64]; // 0x278	
+	int32_t m_nTraceCount; // 0x478	
+	int32_t m_StuckLast; // 0x47c	
+	bool m_bSpeedCropped; // 0x480	
+	uint8_t __pad1381[0x3]; // 0x481
+	int32_t m_nOldWaterLevel; // 0x484	
+	float m_flWaterEntryTime; // 0x488	
+	Vector m_vecForward; // 0x48c	
+	Vector m_vecLeft; // 0x498	
+	Vector m_vecUp; // 0x4a4	
+	Vector m_vecPreviouslyPredictedOrigin; // 0x4b0	
+	bool m_bMadeFootstepNoise; // 0x4bc	
+	uint8_t __pad13bd[0x3];
+	int32_t m_iFootsteps; // 0x4c0	
+	int32_t m_nRoundFootstepsMade; // 0x4c4	
 	// MNetworkEnable
-	bool m_bOldJumpPressed; // 0x13c8	
-	uint8_t __pad13c9[0x3]; // 0x13c9
-	float m_flJumpPressedTime; // 0x13cc	
+	bool m_bOldJumpPressed; // 0x4c8	
+	uint8_t __pad13c9[0x3]; // 0x4c9
+	float m_flJumpPressedTime; // 0x4cc	
 	// MNetworkEnable
-	float m_flJumpUntil; // 0x13d0	
+	float m_flJumpUntil; // 0x4d0	
 	// MNetworkEnable
-	float m_flJumpVel; // 0x13d4	
+	float m_flJumpVel; // 0x4d4	
 	// MNetworkEnable
-	GameTime_t m_fStashGrenadeParameterWhen; // 0x13d8	
-	uint8_t __pad13dc[0x4]; // 0x13dc
+	GameTime_t m_fStashGrenadeParameterWhen; // 0x4d8	
+	uint8_t __pad13dc[0x4]; // 0x4dc
 	// MNetworkEnable
-	uint64_t m_nButtonDownMaskPrev; // 0x13e0	
+	uint64_t m_nButtonDownMaskPrev; // 0x4e0	
 	// MNetworkEnable
-	float m_flOffsetTickCompleteTime; // 0x13e8	
+	float m_flOffsetTickCompleteTime; // 0x4e8	
 	// MNetworkEnable
-	float m_flOffsetTickStashedSpeed; // 0x13ec	
+	float m_flOffsetTickStashedSpeed; // 0x4ec	
 };
-static_assert(sizeof(CCSPlayer_MovementServices) == 0x13f0, "Class didn't match expected size");
+static_assert(sizeof(CCSPlayer_MovementServices) == 0x4f0, "Class didn't match expected size");
 
 // Size: 0xE0
 class CMoveData
 {
 public:
 	// TODO: fix offsets that were fricked due to game updates.
+	// Size is correct now.
 	uint8_t moveDataFlags; // 0x0
 	CHandle<CBasePlayerPawn> m_nPlayerHandle; // 0x4 don't know if this is actually a CHandle. <CBaseEntity> is a placeholder
-	uint8_t unknown1[0xC];
+	QAngle m_vecAbsViewAngles; // 0x8 unsure
 	QAngle m_vecViewAngles; // 0x14
+	Vector m_vecLastMovementImpulses;
 	float m_flForwardMove; // 0x20
 	float m_flSideMove; // 0x24
 	float m_flUpMove; // 0x28
-	uint8_t unknown2[0x10]; // 0x2c
-	Vector m_vecVelocity; // 0x30
-	Vector m_vecAngles; // 0x3c
-	uint8_t unknown3[0x38];
-	// these 2 vecs are used in FinishMove -> Unk21(this, ucmd, mv) -> void __fastcall sub_7FF8E0960610(CMoveData *mv)
-	Vector m_unknownVec0; // 0x80
-	Vector m_unknownVec1; // 0x8c
-	Vector m_vecAbsOrigin; // 0x98
-	uint8_t unknown5[0x4]; // 0xa4
-	Vector m_vecTrailingVelocity; // 0xa8
-	float m_flTrailingVelocityTime; // 0xb4
-	uint8_t unknown6[0x4]; // 0xb8
-	// offsets seem to be correct at least up to this point
+	float m_flSubtickFraction; // 0x38
+	Vector m_vecVelocity; // 0x3c
+	Vector m_vecAngles; // 0x48
+	uint8_t padding1[4]; //0x54 unsure
+	int m_nMovementCmdsThisTick; // 0x58 unsure, but it goes up if you spam lots of key in a tick
+	uint8_t padding2[4]; // 0x5c
+	uint8_t unknown3[8]; // 0x60 unsure, address of some sort, doesn't seem to change during gameplay
+	uint8_t unknown4[8]; // 0x68 always 0, could be padding
+	bool m_bGameCodeMovedPlayer; // 0x70 unsure
+	uint8_t padding3[4]; // 0x74
+	CUtlVector<touchlist_t> m_TouchList; // 0x78
+	Vector m_collisionNormal; // 0x90
+	Vector m_groundNormal; // 0x9c unsure
+	Vector m_vecAbsOrigin; // 0xa8
+	uint8_t padding4[4]; // 0xb4 unsure
+	bool m_nGameModeMovedPlayer; // 0xb8
+	Vector m_vecOldAngles; // 0xbc
 	float m_flMaxSpeed; // 0xc8
 	float m_flClientMaxSpeed; // 0xcc
-	
-	Vector m_vecOldAngles; // 0xbc
-	bool m_bJumpedThisTick; // 0xd0 related to dev_cs_enable_consistent_jumps
-	bool m_bSomethingWithGravity; // 0xd1 related to the new ShouldApplyGravity
-	uint8_t unknown7[0x2]; // 0xd2 Probably padding
-	Vector m_outWishVel; // 0xd4
+	float m_flSubtickAccelSpeed; // 0xd0 Related to ground acceleration subtick stuff with sv_stopspeed and friction
+	bool m_bJumpedThisTick; // 0xd4 something to do with basevelocity and the tick the player jumps
+	bool m_bShouldApplyGravity; // 0xd5
+	Vector m_outWishVel; //0xd8
 };
-
 #endif // CS2_GAMEMOVEMENT_H

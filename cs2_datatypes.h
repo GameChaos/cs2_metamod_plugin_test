@@ -747,7 +747,7 @@ public:
 	CUtlVector< thinkfunc_t > m_aThinkFunctions; // 0x228
 	int32_t m_iCurrentThinkContext; // 0x240
 	GameTick_t m_nLastThinkTick; // 0x244
-	uint8_t __pad0248[0x8]; // 0x248
+	CGameSceneNode *m_pSceneNode; // 0x248
 	CBitVec< 64 > m_isSteadyState; // 0x250
 	float m_lastNetworkChange; // 0x258
 	uint8_t __pad025c[0xc]; // 0x25c
@@ -2167,6 +2167,92 @@ public:
 	uint8_t __pad08bd[0x3]; // 0x8bd
 	// MNetworkEnable
 	CUtlSymbolLarge m_szDisplayText; // 0x8c0
+};
+
+struct RnCollisionAttr_t
+{
+	uint64 m_nInteractsAs;
+	uint64 m_nInteractsWith;
+	uint64 m_nInteractsExclude;
+	uint32 m_nEntityId;
+	uint16 m_nHierarchyId;
+	uint8 m_nCollisionGroup;
+	uint8 m_nCollisionFunctionMask;
+};
+
+class CBaseTraceS2
+{
+public:
+	Vector startpos;
+	Vector endpos;
+	cplane_t plane;
+	float fraction;
+	uint64_t contents;
+	bool startsolid;
+};
+
+class CGameTraceS2 : public CBaseTraceS2
+{
+public:
+	const void* m_pSurfaceProperties;
+	CBaseEntity* m_pEnt;
+	const void* m_pHitbox;
+	void* m_hBody;
+	void* m_hShape;
+	RnCollisionAttr_t m_ShapeAttributes;
+	Vector boneLocalPos;
+	Vector boneLocalNormal;
+	int m_nFaceIndex;
+	uint16_t hitboxBoneIndex;
+	uint16_t unused0;
+};
+
+typedef CGameTraceS2 trace_t_s2;
+
+struct touchlist_t {
+	Vector deltavelocity;
+	trace_t_s2 trace;
+};
+
+typedef struct con_nprint_s
+{
+	int		index;			// Row #
+	float	time_to_live;	// # of seconds before it disappears. -1 means to display for 1 frame then go away.
+	float	color[3];		// RGB colors ( 0.0 -> 1.0 scale )
+	bool	fixed_width_font;
+} con_nprint_t;
+
+abstract_class IGameUIService : public IAppSystem
+{
+public:
+	virtual void unk11();
+	virtual void unk12();
+	virtual void unk13();
+	virtual void unk14();
+	virtual void unk15();
+	virtual void unk16();
+	virtual void unk17();
+	virtual void unk18();
+	virtual void unk19();
+	virtual void unk20();
+	virtual void unk21();
+	virtual void unk22();
+	virtual void unk23();
+	virtual void unk24();
+	virtual void unk25();
+	virtual void unk26();
+	virtual void unk27();
+	virtual void unk28();
+	virtual void unk29();
+	virtual void unk30();
+	virtual void unk31();
+	virtual void unk32();
+	virtual void unk33();
+	virtual void unk34();
+	virtual void Con_PrintBottomLeft(int pos, const char* buffer, int unk);
+	virtual void unk36();
+	virtual void Con_NXPrintf(const con_nprint_t* info, const char* fmt, ...);
+	virtual void Con_NPrintf(int pos, const char* fmt, ...);
 };
 
 #endif // CS2_DATATYPES_H

@@ -66,8 +66,68 @@ enum TurnState
 	TURN_RIGHT = 1
 };
 
-struct PlayerData
+struct Signature {
+	const char* data = nullptr;
+	const char* mask = nullptr;
+
+	template<size_t N>
+	Signature(const char(&str)[N]) {
+		data = str;
+		char* buffer = new char[N];
+		int index = 0;
+		for (int i = 0; i < N; i++) {
+			if (data[i] == '*') {
+				buffer[i] = '.';
+			}
+			else {
+				buffer[i] = 'x';
+			}
+		}
+		buffer[N - 1] = '\0';
+		mask = buffer;
+	}
+
+};
+
+struct Hook {
+	void **result;
+	Signature sig;
+	bool detour;
+	subhook_t *detourHook;
+	void **hookFunction;
+};
+
+class Checkpoint
 {
+public:
+	Vector origin;
+	QAngle angles;
+	Vector ladderNormal;
+	bool onLadder;
+	CHandle< CBaseEntity > groundEnt; // 0x3c4
+
+	Checkpoint()
+	{
+	}
+	Checkpoint(CCSPlayerPawn* pawn)
+	{
+		this->origin = pawn->m_pSceneNode->m_vecAbsOrigin;
+		this->angles = pawn->v_angle;
+		this->ladderNormal = static_cast<CCSPlayer_MovementServices*>(pawn->m_pMovementServices)->m_vecLadderNormal;
+		this->onLadder = pawn->m_MoveType == MOVETYPE_LADDER;
+		this->groundEnt = pawn->m_hGroundEntity;
+	}
+};
+
+struct StartPosition
+{
+	Vector origin;
+	QAngle angles;
+};
+
+class PlayerData
+{
+public:
 	// General
 	b32 turning;
 	f32 preSpeed;
@@ -80,8 +140,45 @@ struct PlayerData
 	f32 preVelMod;
 	f32 preVelModLastChange;
 	f32 preCounter;
-};
 
+	// Timer stuff
+	f32 timerStartTime;
+	b32 timerRunning;
+	b32 hasStartPosition;
+	StartPosition autoStartPos;
+	b32 hasCustomStartPosition;
+	StartPosition startPos;
+	
+	// CP/Teleport stuff
+	CUtlVector<Checkpoint> checkpoints;
+	f32 teleportTime;
+	Vector lastOrigin;
+	QAngle lastAngle;
+
+	void MakeCheckpoint(CCSPlayerPawn *pawn)
+	{
+		int i = this->checkpoints.AddToTail();
+		this->checkpoints[i] = Checkpoint(pawn);
+	}
+
+	void SetAutoStartPosition(CCSPlayerPawn* pawn)
+	{
+		this->hasStartPosition = true;
+		this->autoStartPos.origin = pawn->m_pSceneNode->m_vecAbsOrigin;
+		this->autoStartPos.angles = pawn->v_angle;
+	}
+	void SetStartPosition(CCSPlayerPawn *pawn)
+	{
+		this->hasCustomStartPosition = true;
+		this->startPos.origin = pawn->m_pSceneNode->m_vecAbsOrigin;
+		this->startPos.angles = pawn->v_angle;
+	}
+
+	void DisableStartPosition()
+	{
+		this->hasCustomStartPosition = false;
+	}
+};
 
 extern StubPlugin g_StubPlugin;
 PLUGIN_GLOBALVARS();
