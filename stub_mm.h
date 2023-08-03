@@ -66,6 +66,37 @@ enum TurnState
 	TURN_RIGHT = 1
 };
 
+struct Signature {
+	const char* data = nullptr;
+	const char* mask = nullptr;
+
+	template<size_t N>
+	Signature(const char(&str)[N]) {
+		data = str;
+		char* buffer = new char[N];
+		int index = 0;
+		for (int i = 0; i < N; i++) {
+			if (data[i] == '*') {
+				buffer[i] = '.';
+			}
+			else {
+				buffer[i] = 'x';
+			}
+		}
+		buffer[N - 1] = '\0';
+		mask = buffer;
+	}
+
+};
+
+struct Hook {
+	void **result;
+	Signature sig;
+	bool detour;
+	subhook_t *detourHook;
+	void **hookFunction;
+};
+
 class Checkpoint
 {
 public:
