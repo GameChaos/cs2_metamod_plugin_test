@@ -139,7 +139,7 @@ Hook hook[] = {
 
 	// CBaseAnimGraph__Teleport
 	// 5 functions after one with "Physics_SimulateEntity" "Server Game"
-	HOOK(CBaseAnimGraph__Teleport, "\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x48\x8B\xD9\xE8\x2A\x2A\x2A\x2A\x48\x8B\x8B\x48\x02\x00\x00\x48\x8B\x01\xFF\x50\x40\x33\xDB"),
+	HOOK(CBaseAnimGraph__Teleport, "\x48\x89\x5C\x24\x10\x57\x48\x83\xEC\x20\x48\x8B\xD9\xE8\x2A\x2A\x2A\x2A\x48\x8B\x8B\x48\x02\x00\x00"),
 
 	// CCSPP_PostThink
 	// [%.0f %.0f %.0f] relocated from [%.0f %.0f %.0f] in %0.1f sec (v2d = %.0f u/s)\n" "health=%d, armor=%d, helmet=%d
@@ -151,11 +151,11 @@ Hook hook[] = {
 
 	// CCSP_MS__OnJump
 	// "player_jump"
-	DETOUR_HOOK_CCSP_MS(OnJump, "\x40\x53\x57\x48\x81\xEC\xA8\x00\x00\x00\x48\x8B\xD9"),
+	DETOUR_HOOK_CCSP_MS(OnJump, "\x40\x53\x57\x48\x81\xEC\x98\x00\x00\x00\x48\x8B\xD9"),
 
 	// CCSP_MS__ProcessMovement
 	// "pa start %f"
-	DETOUR_HOOK_CCSP_MS(ProcessMovement, "\x40\x56\x57\x48\x81\xEC\xA8\x00\x00\x00\x48\x8B\xF9"),
+	DETOUR_HOOK_CCSP_MS(ProcessMovement, "\x40\x56\x57\x48\x81\xEC\xA8\x00\x00\x00\x4C\x8B\x49\x30"),
 
 	// CCSP_MS__WalkMove     
 	// sub_7FFE47863820(a1, a2, "FullWalkMovePreMove");
@@ -164,7 +164,7 @@ Hook hook[] = {
 
 	// CCSP_MS__AirAccelerate
 	// Look for sv_air_max_wishspeed
-	DETOUR_HOOK_CCSP_MS(AirAccelerate, "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x48\x89\x7C\x24\x18\x55\x48\x8D\x6C\x24\xB1"),
+	DETOUR_HOOK_CCSP_MS(AirAccelerate, "\x48\x8B\xC4\x48\x89\x58\x10\x48\x89\x70\x18\x48\x89\x78\x20\x55\x48\x8D\x68\xA9"),
 
 	// CCSP_MS__TryPlayerMove
 	// "CCSPlayer_MovementServices::TryPlayerMove() Trace ended stuck"
@@ -172,7 +172,7 @@ Hook hook[] = {
 
 	// CCSGameConfiguration::GetTickInterval
 	// CCSGameConfiguration vtable, 2 functions after one with "csgo" string
-	DETOUR_HOOK(CCSGC__GetTickInterval, "\xF3\x0F\x10\x05\xC8\x8A\x7F\x00"),
+	DETOUR_HOOK(CCSGC__GetTickInterval, "\xF3\x0F\x10\x05\x18\x3C\x7E\x00"),
 
 	// CCSP_MS__Friction
 	// sub_7FFE47869020(a1, a2); <- this function
@@ -186,7 +186,7 @@ Hook hook[] = {
 
 	// FindUseEntity
 	// "Radial using: %s\n"
-	DETOUR_HOOK(FindUseEntity, "\x48\x89\x5C\x24\x18\x48\x89\x74\x24\x20\x55\x57\x41\x54\x41\x55\x41\x57\x48\x8D\xAC\x24\x50\xEB\xFF\xFF")
+	DETOUR_HOOK(FindUseEntity, "\x48\x89\x5C\x24\x18\x48\x89\x74\x24\x20\x55\x57\x41\x54\x41\x55\x41\x56\x48\x8D\xAC\x24\x50\xEB\xFF\xFF")
 };
 
 internal bool Hooks_HookFunctions(char *error, size_t maxlen)
